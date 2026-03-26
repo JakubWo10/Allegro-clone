@@ -49,7 +49,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
 
 
 
-def hash_password(password: str) -> str: 
+def hash_password(password: str) -> str:
     return password_context.hash(password)
 
 def verify_passowrd(password: str, hashed_password: str) -> bool:
@@ -63,14 +63,14 @@ def create_token(username: str, user_id: int) -> str:
         "user_id": user_id
 
     }
-    
+
     return jwt.encode(payload,settings.SECRET_KEY.get_secret_value(), algorithm=settings.ALGORITHM)
 
 
 async def verify_token(token: str) -> User:
-    if not token: 
+    if not token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized acces is not legal D:")
-    try: 
+    try:
         payload = jwt.decode(token, settings.SECRET_KEY.get_secret_value(), algorithms=[settings.ALGORITHM])
         username: str = payload.get("sub")
         if not username:
@@ -86,7 +86,7 @@ async def verify_token(token: str) -> User:
 
 
 @app.post("/register")
-async def register(reg_user: Reguser) -> Dict[str, str]:  
+async def register(reg_user: Reguser) -> Dict[str, str]:
     user_name = reg_user.name
 
     exist: bool | Tuple[str] = await User_service.user_name_exist(user_name)
@@ -101,7 +101,7 @@ async def register(reg_user: Reguser) -> Dict[str, str]:
 
     if response:
         return {"detail": "Poprawnie zarejestrowano użytkownika"}
-    
+
     return {"detail": "Cos poszło nie tak"}
 
 #musze sie zarejestrowac w chmurze google i potem dokoncze
@@ -109,14 +109,14 @@ async def register(reg_user: Reguser) -> Dict[str, str]:
 # async def login(google_token: GoogleToken):
 
 #     token = google_token.token
-    
-#     try: 
+
+#     try:
 #         id_info = id_token.verify_oauth2_token(token, requests.Request(), settings.GOOGLE_CLIENT_ID)
 
 #         user_email = id_info.get("email")
 #         user_name = id_info.get('name')
 #     except Exception:
-#         raise HTTPException(status_code=401, detail="Nieprawidłowy token Google") 
+#         raise HTTPException(status_code=401, detail="Nieprawidłowy token Google")
 
 
 
@@ -130,18 +130,18 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()) -> Dict[str, s
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Złe dane logowania")
 
     user_password: str = exist[1]
-    
+
 
     if not verify_passowrd(form_data.password,user_password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Złe dane logowania")
-    
+
     user_id: int =  exist[4]
     image_source: str = exist[2]
     user_email: str = exist[3]
-  
+
     token: str = create_token(user_name, user_id)
     return {"access_token": token, "token_type": "bearer","user_email": user_email, "image_source": image_source, "user_id": str(user_id) }
-    
+
 
 
 
@@ -158,7 +158,7 @@ async def get_my_data(token: str = Depends(oauth2_scheme)):
 
 @app.patch("/{user_id}/profile_image")
 async def update_image(user_id: int, file: UploadFile = File(...), token: str = Depends(oauth2_scheme)):
-    
+
     user: User = await verify_token(token)
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="BRAK AUTORYZACJI")
@@ -167,15 +167,15 @@ async def update_image(user_id: int, file: UploadFile = File(...), token: str = 
         raise HTTPException(status_code=400, detail="Przesłany plik jest pusty")
     content = await file.read()
 
-    try: 
+    try:
         path: str = User_service.processs_profile_image(user_id ,content)
     except Exception:
         raise HTTPException(status_code=400, detail=f"Błąd przetwarzania obrazu:")
 
     reuslt: str = await User_service.update_profile_image(path, user_id)
-    if not reuslt: 
+    if not reuslt:
         raise HTTPException(status_code=400, detail=f"Wystąpił bląd podczas aktualizowania zdjecia")
-    
+
     return {"Message": "Zaktualizowano zdjecie poprawnie"}
 
 
@@ -190,7 +190,7 @@ async def create_product (name: str = Form(...), quantity: int = Form(...), desc
             raise PyJWTError
     except PyJWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Nie autoryzowany dostep")
-    
+
 
 
     validate_price, validate_quantity = price, quantity
@@ -218,7 +218,7 @@ async def create_product (name: str = Form(...), quantity: int = Form(...), desc
 
 
 
-    
+
 
     return {"Message": "Poprawnie dodano produkt"}
 
@@ -233,7 +233,7 @@ async def get_all_products(token: str = Depends(oauth2_scheme)):
             raise PyJWTError
     except PyJWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Nie autoryzowany dostep")
-    
+
 
     rows = await User_service.get_all_prods()
 

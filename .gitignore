@@ -1,7 +1,6 @@
-
 .env
-backend/venv/
-backend/.venv/
+allegro-clone/venv/
+allegro-clone/.venv/
 **/__pycache__/
 **/*.py[cod]
 

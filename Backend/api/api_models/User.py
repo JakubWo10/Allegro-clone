@@ -16,5 +16,3 @@ class User(BaseModel):
             "hashed_password": self.hashed_password,
             "image_source": self.image_source
         }
-    
-

@@ -11,8 +11,8 @@ from config.config import AVATARS_DIR, PRODUCTS_DIR
 from api.api_models.Product import Product
 from typing import List, Tuple, Dict
 
-class Transform: 
-    
+class Transform:
+
     image_url = "test"
 
     def transform_to_user(self,hashed_password: str, reg_user: Reguser) -> User:
@@ -23,16 +23,16 @@ class Transform:
 
     def process_profile_image(self,user_id: int, file: bytes) -> str:
         with Image.open(BytesIO(file)) as img:
-        
+
             if img.format.upper() not in ["JPEG", "PNG"]:
                 raise UnidentifiedImageError
-            
+
             img = ImageOps.exif_transpose(img)
             img = ImageOps.fit(img, (600,600), method=Image.Resampling.LANCZOS)
 
             if img.mode in ["RGBA", "P", "LA"]:
                 img = img.convert("RGB")
-        
+
             filepath: str = f"user_{user_id}.jpg"
 
             save_path = os.path.join(AVATARS_DIR, filepath)
@@ -40,17 +40,17 @@ class Transform:
 
 
             return f"/avatars/{filepath}"
-            
+
 
 
     def process_product_main_image(self,product_id: int, file: bytes) -> str:
-        
+
         with Image.open(BytesIO(file)) as img:
 
-            
+
             if img.format.upper() not in ["JPEG", "PNG"]:
                 raise UnidentifiedImageError
-             
+
             img = ImageOps.exif_transpose(img)
             img = ImageOps.fit(img, (300,300), method= Image.Resampling.LANCZOS)
 
@@ -62,7 +62,7 @@ class Transform:
             img.save(save_path, "JPEG", quality =90 )
 
             return os.path.join("/products/"+filepath)
-        
+
     def map_to_product_list(self, products: List[Tuple[Product]]) -> List[Product]:
 
         products_list = []

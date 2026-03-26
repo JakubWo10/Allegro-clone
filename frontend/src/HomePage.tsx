@@ -1,4 +1,4 @@
-import './index.css' 
+import './index.css'
 import { useNavigate } from 'react-router-dom'
 import { useContext, useEffect, useState } from 'react'
 import SearchTile from './Components/SearchTile'
@@ -36,10 +36,10 @@ function HomePage(){
     ]
 
     const [products, setProducts] = useState<Product[]>(ProductsList)
-    
 
-    
-    
+
+
+
 
     console.log(query)
 
@@ -48,27 +48,27 @@ function HomePage(){
         <>
         <div className="flex flex-col h-screen w-full">
             <div className="flex bg-gradient-to-l from-yellow-400 to-green-400 w-full h-14 shadow-lg shadow-gray-700 flex-row gap-15 justify-between px-3">
-                <div className='flex text-center gap-2'> 
+                <div className='flex text-center gap-2'>
                     <p className="flex py-2 text-white font-bold text-2xl italic cursor-default">Sklepik</p>
                 </div>
                 <div className='flex flex-row flex-start  '>
                     <button className="h-full px-4 text-white font-bold uppercase text-xs tracking-wider transition-all duration-50 hover:text-black hover:bg-indigo-900/10 hover:border-b-4 hover:border-green-500 hover:text-white  "> Puste pole </button>
                     <button className="h-full px-4 text-white font-bold uppercase text-xs tracking-wider transition-all duration-50 hover:text-black hover:bg-indigo-900/10 hover:border-b-4 hover:border-green-500 hover:text-white "> wiadomosci </button>
                     <button className="h-full px-4 text-white font-bold uppercase text-xs tracking-wider transition-all duration-50 hover:text-black hover:bg-indigo-900/10 hover:border-b-4 hover:border-green-500 hover:text-white " > Koszyk </button>
-                    {auth.token ? 
-                    <button onClick={() => navigate("/Profil")} className="h-full px-4 text-white font-bold uppercase text-xs tracking-wider transition-all 
+                    {auth.token ?
+                    <button onClick={() => navigate("/Profil")} className="h-full px-4 text-white font-bold uppercase text-xs tracking-wider transition-all
                     duration-50 hover:text-black hover:bg-indigo-900/10 hover:border-b-4 hover:border-green-500 hover:text-white "> Profil </button>:
                     <button onClick = {() => navigate("/login")} className="h-full px-4 text-white font-bold uppercase text-xs tracking-wider transition-all
-                     duration-50 hover:text-black hover:bg-indigo-900/10 hover:border-b-4 hover:border-green-500 hover:text-white "> Zaloguj sie</button> 
+                     duration-50 hover:text-black hover:bg-indigo-900/10 hover:border-b-4 hover:border-green-500 hover:text-white "> Zaloguj sie</button>
                     }
                 </div>
             </div>
-            <div className= "flex flex-col lg:flex-row bg-white w-full h-full gap-4 p-3"> 
+            <div className= "flex flex-col lg:flex-row bg-white w-full h-full gap-4 p-3">
                 <div className='flex flex-col bg-white w-full lg:w-1/4 h-auto gap-3 rounded-md shadow-2xl border border-slate-200'>
                 <SearchTile input={query} onInputChange={setQuery}/>
                 <Categories selected={selected} OnChange={setSelected}/>
-                    
-          
+
+
                 </div>
                   <div className='flex bg-white w-full lg:flex-1 h-screen rounded-lg shadow-xl border border-slate-200 flex-wrap overflow-y-auto'>
                   <div className='flex  text-slate-400 text-xs font-medium uppercase justify-end items-end w-full'>

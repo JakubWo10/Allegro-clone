@@ -18,7 +18,7 @@ function App() {
       <GoogleOAuthProvider clientId=''>
     <AuthProvider>
       <Routes>
-        <Route path="/register" element={<RegisterPage/>} />  
+        <Route path="/register" element={<RegisterPage/>} />
         <Route path="/login" element={<LoginPage/>} />
         <Route path="/" element={<HomePage/>} />
         <Route path="/product/:id" element={<ProductPage/>} />
@@ -28,7 +28,7 @@ function App() {
 
         </Route>
       </Routes>
-   
+
    </AuthProvider>
    </GoogleOAuthProvider>
    </Router>

@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 export interface Product {
     user_id: number;
     description: string;
-    price: number; 
+    price: number;
     category: string;
 }
 
@@ -46,7 +46,7 @@ function Products ({products, selected, setNum, query}: ProductList) {
                 return (
                 <div onClick = {() => naviageToDetailPage(product.user_id)} key={index} className="bg-white p-2 w-64 h-64 rounded-2xl shadow-lg border border-slate-100 flex flex-col justify-between hover:shadow-2xl transition-shadow cursor-pointer items-center">
                     <p className="text-gray-600 text-left">{product.description} - {product.category} </p>
-                    <label> 
+                    <label>
                         <img src={Elektronika} className="w-40 h-40 flex cursor-pointer "/>
                     </label>
                     <p className="text-orange-500 font-bold mt-2">{product.price} PLN</p>
@@ -62,4 +62,3 @@ function Products ({products, selected, setNum, query}: ProductList) {
 
 
 export default Products
-

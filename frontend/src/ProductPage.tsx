@@ -17,16 +17,16 @@ function ProductPage ()
     return (
 
         <>
-        <div className="flex flex-col bg-gray-300 w-screen h-screen justify-center items-center"> 
-                <div className="flex flex-col bg-white shadow-md w-[1200px] h-[800px]"> 
+        <div className="flex flex-col bg-gray-300 w-screen h-screen justify-center items-center">
+                <div className="flex flex-col bg-white shadow-md w-[1200px] h-[800px]">
                     <input placeholder="Nazwa przedmiotu"/>
                     <input placeholder="Opis przedmiotu "/>
-                    <h1> XDXDXD {id} </h1> 
+                    <h1> XDXDXD {id} </h1>
 
                 </div>
-        
+
         </div>
-        
+
         </>
 
 

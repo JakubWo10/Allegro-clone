@@ -13,7 +13,7 @@ class Product(BaseModel):
     quantity: int
 
     def to_dict(self):
-        return { 
+        return {
             "name": self.name,
             "price": self.price,
             "description": self.description,
@@ -22,6 +22,6 @@ class Product(BaseModel):
             "main_image": "test",
             "quantity": self.quantity
         }
-    
+
     def from_tuples(self, rows: List[Tuple]):
         pass

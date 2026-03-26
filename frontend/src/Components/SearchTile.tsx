@@ -9,7 +9,7 @@ interface SearchTileProps {
 function SearchTile ({input, onInputChange} : SearchTileProps) {
 
 
-    return ( 
+    return (
         <>
         <div className="flex flex-col py-7 w-full px-2 ">
         <h1> Wyszukaj to czego szukasz</h1>

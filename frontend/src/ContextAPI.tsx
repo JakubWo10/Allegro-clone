@@ -15,7 +15,7 @@ interface AuthContextType {
     setAuth: (auth: authData) => void
 }
 
-interface AuthProviderProps { 
+interface AuthProviderProps {
     children: ReactNode
 }
 
@@ -30,7 +30,7 @@ export const AuthContext = createContext<AuthContextType>({
 export const AuthProvider = ({children}: AuthProviderProps) => {
     const [auth, setAuth] = useState(() => ({
         user_id: localStorage.getItem("user_id"),
-        name: localStorage.getItem("name"), 
+        name: localStorage.getItem("name"),
         token: localStorage.getItem("token"),
         email: localStorage.getItem("email"),
         image_url: localStorage.getItem("image_url")

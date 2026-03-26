@@ -15,4 +15,3 @@ class Reguser(BaseModel):
             "email": self.email,
             "password": self.password
         }
-    
