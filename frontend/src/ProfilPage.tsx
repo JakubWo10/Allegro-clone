@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from './ContextAPI';
-import MasterTier from "./assets/mastertier.png"
+
 
 interface User {
     id: number;
@@ -35,7 +35,7 @@ function ProfilPage() {
         <div className='flex flex-row items-end px-10 -mt-20 space-x-6'>
             <label className='cursor-pointer w-40 h-40 rounded-full border-8 border-white shadow-lg overflow-hidden shrink-0 bg-white relative z-10'>
                 <input type='file' accept="image/*" className="hidden"/>
-                <img src={MasterTier} className='w-full h-full object-cover'/>
+                <img  className='w-full h-full object-cover'/>
             </label>
             <h1 className='text-3xl font-bold pb-4 text-gray-800'>
                 Witaj, <span className='text-orange-500'>{auth.name}</span>

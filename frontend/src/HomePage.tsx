@@ -5,7 +5,7 @@ import SearchTile from './Components/SearchTile'
 import Categories from './Components/Categories'
 import { AuthContext } from './ContextAPI'
 import Products from './Components/Products'
-import { Product } from './Components/Products'
+import { type Product } from './Components/Products'
 
 function HomePage(){
     const [query, setQuery] = useState("")
