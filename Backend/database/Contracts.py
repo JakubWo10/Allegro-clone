@@ -1,4 +1,4 @@
-from typing import Protocol, Dict
+from typing import Dict, Protocol
 
 
 class DataProtocol(Protocol):

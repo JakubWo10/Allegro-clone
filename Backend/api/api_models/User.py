@@ -1,5 +1,6 @@
-from pydantic import BaseModel
 from typing import Dict, Optional
+
+from pydantic import BaseModel
 
 
 class User(BaseModel):
@@ -14,5 +15,5 @@ class User(BaseModel):
             "name": self.name,
             "email": self.email,
             "hashed_password": self.hashed_password,
-            "image_source": self.image_source
+            "image_source": self.image_source,
         }

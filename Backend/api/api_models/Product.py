@@ -1,4 +1,5 @@
-from typing import Dict, List, Tuple
+from typing import List, Tuple
+
 from pydantic import BaseModel
 
 
@@ -20,8 +21,8 @@ class Product(BaseModel):
             "owner_id": self.owner_id,
             "category": self.category,
             "main_image": "test",
-            "quantity": self.quantity
+            "quantity": self.quantity,
         }
 
     def from_tuples(self, rows: List[Tuple]):
-        pass
+        return Product(name=rows[0])

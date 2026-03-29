@@ -1,5 +1,5 @@
 import Elektronika from "../assets/Elektronika.png"
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 
 export interface Product {

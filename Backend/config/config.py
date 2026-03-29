@@ -1,6 +1,8 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import SecretStr
 import os
+
+from pydantic import SecretStr
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
 
 class Settings(BaseSettings):
 
@@ -9,10 +11,8 @@ class Settings(BaseSettings):
     SECRET_KEY: SecretStr
     TOKEN_EXPIRES: int
 
-    model_config = SettingsConfigDict(
-        env_file="../.env",
-        env_file_encoding="utf-8"
-    )
+    model_config = SettingsConfigDict(env_file="../.env", env_file_encoding="utf-8")
+
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
