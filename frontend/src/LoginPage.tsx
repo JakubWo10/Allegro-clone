@@ -1,14 +1,17 @@
-import { useContext, useState } from "react"
+import { useContext, useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 
-import { GoogleLogin } from '@react-oauth/google';
 import { AuthContext } from "./ContextAPI";
 
 
-
-
+declare global {
+  interface Window {
+    google: any;
+  }
+}
 
 function LoginPage() {
+
     const [name, setName] = useState("")
     const [password, setPassword] = useState("")
     const [error, setError] = useState<false | string>("")
@@ -16,6 +19,68 @@ function LoginPage() {
     const navigate = useNavigate()
 
     const {auth, setAuth} = useContext(AuthContext)
+
+    useEffect(() => {
+        /* global google */
+        window.google.accounts.id.initialize({
+            client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+            callback: handleCallbackResponse
+    });
+
+        window.google.accounts.id.renderButton(
+            document.getElementById("signInDiv"),
+            {theme: "outline", size: "large"}
+        )
+
+
+    }, []);
+
+    async function handleCallbackResponse(response: any) {
+        console.log(response.credential)
+
+        try{
+        const data = await fetch(`http://127.0.0.1:8000/Google/login`,{
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                google_token: response.credential
+            })
+        })
+
+        const backendResponse = await data.json();
+
+        if (!data.ok)
+        {
+            console.log("cos poszlo nie tak")
+            return
+        }
+
+        localStorage.setItem("token", backendResponse.access_token);
+        localStorage.setItem("name", backendResponse.username);
+
+        setAuth({
+            token: backendResponse.access_token,
+            name: backendResponse.username,
+            email: backendResponse.user_email,
+            user_id: backendResponse.user_id,
+            image_url: null,
+        })
+
+        console.log(auth.token)
+        setTimeout(() => {
+        navigate("/");
+        }, 100);
+    }
+
+    catch(err)
+    {
+        console.log(err)
+        return
+    }
+
+    }
+
+
 
     async function loginFetch()
     {
@@ -57,10 +122,11 @@ function LoginPage() {
             token: data.access_token,
             name: localStorage.getItem("name"),
             email: data.user_email,
-            image_url: data.image_source
+            image_url: null
         })
 
         navigate("/")
+
         } catch(err: any) {
             setError(err.message || "Wystąpił błąd")
         }
@@ -88,7 +154,7 @@ function LoginPage() {
 
                         <button className="text-lg flex items-center justify-center border-blue-500 border-3
                         bg-blue-500 text-white rounded-xl w-35 h-15 cursor-pointer hover:bg-green-500 hover:border-green-500 transition-colors duration-100 active:scale-95" onClick={() => (navigate("/"))}> Strona głowna </button>
-
+                        <div id="signInDiv"> </div>
                 </div>
 
 

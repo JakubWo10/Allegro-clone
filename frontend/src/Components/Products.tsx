@@ -27,21 +27,22 @@ function Products ({products, selected, setNum, query}: ProductList) {
 
     function naviageToDetailPage (user_id : number) {
         navigate(`/product/${user_id}`)
-
-
     }
 
+    const filteredProducts = useMemo(() => {
+        const result = selected.length > 0 ? products.filter(item => selected.includes(item.category)) : products
 
-    const filteredProducts = selected.length > 0 ? products.filter(item => selected.includes(item.category)) : products
-    const twoTimesFiltered = query.length > 0 ? filteredProducts.filter(item => item.description.includes(query.toLocaleLowerCase())) : filteredProducts
+        return query.length > 0 ? result.filter(item => item.description.includes(query.toLocaleLowerCase())) : result
 
-     useEffect(() => {
-        setNum(twoTimesFiltered.length);
-    }, [twoTimesFiltered.length]);
+    }, [query, products, selected])
+
+    setNum(filteredProducts.length)
+
+
 
    return (
         <div className="flex flex-row w-full h-full gap-3 flex-wrap justify-around py-2">
-            {twoTimesFiltered.map((product, index) => {
+            {filteredProducts.map((product, index) => {
 
                 return (
                 <div onClick = {() => naviageToDetailPage(product.user_id)} key={index} className="bg-white p-2 w-64 h-64 rounded-2xl shadow-lg border border-slate-100 flex flex-col justify-between hover:shadow-2xl transition-shadow cursor-pointer items-center">

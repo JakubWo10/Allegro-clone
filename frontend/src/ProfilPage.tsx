@@ -19,7 +19,11 @@ function ProfilPage() {
 
     useEffect(() => {
         const fetchData = async () => {
-            const response = fetch("http://127.0.0.1:8000/me")
+            const response = await fetch("http://127.0.0.1:8000/me")
+
+            if (!response.ok) {
+                return
+            }
         }
     })
 
