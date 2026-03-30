@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     ALGORITHM: str
     SECRET_KEY: SecretStr
     TOKEN_EXPIRES: int
+    VITE_GOOGLE_CLIENT_ID: SecretStr
 
     model_config = SettingsConfigDict(env_file="../.env", env_file_encoding="utf-8")
 

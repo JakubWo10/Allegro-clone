@@ -2,14 +2,17 @@ from datetime import datetime, timedelta, timezone
 from typing import Dict, Tuple
 
 import jwt
+from api.api_models.Google import GoogleToken
 from api.api_models.RegUser import Reguser
-from api.api_models.User import User
+from api.api_models.UserOut import UserOut
 from api.UserService import User_service
 from config.config import AVATARS_DIR, PRODUCTS_DIR, settings
 from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.staticfiles import StaticFiles
+from google.auth.transport import requests
+from google.oauth2 import id_token
 from jose import ExpiredSignatureError
 from jwt import PyJWTError
 from passlib.context import CryptContext
@@ -24,7 +27,7 @@ app.mount("/products", StaticFiles(directory=PRODUCTS_DIR), name="products")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:5173"],
     allow_methods=["*"],
     allow_headers=["*"],
     allow_credentials=True,
@@ -101,19 +104,47 @@ async def register(reg_user: Reguser) -> Dict[str, str]:
     return {"detail": "Cos poszło nie tak"}
 
 
-# musze sie zarejestrowac w chmurze google i potem dokoncze
-# @app.post("/Google_login")
-# async def login(google_token: GoogleToken):
+@app.post("/Google/login")
+async def login_google(google_token: GoogleToken):
 
-#     token = google_token.token
+    try:
+        id_info = id_token.verify_oauth2_token(google_token.google_token, requests.Request(), settings.VITE_GOOGLE_CLIENT_ID.get_secret_value())
 
-#     try:
-#         id_info = id_token.verify_oauth2_token(token, requests.Request(), settings.GOOGLE_CLIENT_ID)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Nieprawidłowy token Google")
 
-#         user_email = id_info.get("email")
-#         user_name = id_info.get('name')
-#     except Exception:
-#         raise HTTPException(status_code=401, detail="Nieprawidłowy token Google")
+    user_email = id_info.get("email")
+    user_name = id_info.get("name")
+    user_google_id = id_info.get("sub")
+    user_google_picture_link = id_info.get("picture")
+
+    result = await User_service.user_name_exist(user_name)
+
+    if not result:
+
+        Google_user = User_service.transform_to_google_user(user_name, user_email, user_google_id)
+
+        await User_service.insert_user(Google_user)
+        user = await User_service.user_name_exist(user_name)
+
+        if isinstance(user, bool) or user is None:
+            return {"Message": "Cos poszlo nie tak"}
+
+        user_id = int(user[1])
+        picture_bytes = await User_service.get_google_picture_bytes(user_google_picture_link)
+
+        if picture_bytes is None:
+            return {"Message": "Cos poszlo nie tak"}
+
+        filepath = User_service.processs_profile_image(user_id, picture_bytes)
+        await User_service.update_profile_image(filepath, user_id)
+
+        token = create_token(user_name, str(user_id))
+
+        return {"access_token": token, "token_type": "bearer", "email": user_email, "username": user_name, "user_id": user_id}
+
+    else:
+        return {"Message": "jajcoszka"}
 
 
 @app.post("/login")
@@ -143,20 +174,13 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()) -> Dict[str, s
         )
 
     user_id = str(exist[4])
-    image_source = exist[2]
     user_email = exist[3]
 
     token = create_token(user_name, user_id)
-    return {
-        "access_token": token,
-        "token_type": "bearer",
-        "user_email": user_email,
-        "image_source": image_source,
-        "user_id": str(user_id),
-    }
+    return {"access_token": token, "token_type": "bearer", "user_email": user_email, "username": user_name}
 
 
-@app.get("/me", response_model=User)
+@app.get("/me", response_model=UserOut)
 async def get_my_data(token: str = Depends(oauth2_scheme)):
     user = await verify_token(token)
     if not user:

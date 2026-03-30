@@ -6,6 +6,8 @@ Backend/.venv/
 **/.mypy_cache/
 .mypy_cache/
 
+Backed/uploads/avatar
+
 frontend/node_modules/
 frontend/dist/
 frontend/.env

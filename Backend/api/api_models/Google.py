@@ -3,4 +3,4 @@ from pydantic import BaseModel
 
 class GoogleToken(BaseModel):
 
-    token: str
+    google_token: str

@@ -1,11 +1,11 @@
 from typing import Dict
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Reguser(BaseModel):
 
-    name: str
+    name: str = Field(min_length=3, max_length=50)
     email: str
     password: str
 

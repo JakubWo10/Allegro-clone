@@ -3,8 +3,9 @@ from io import BytesIO
 
 from api.api_models.Product import Product
 from api.api_models.RegUser import Reguser
-from api.api_models.User import User
+from api.api_models.User import GoogleUser, User
 from config.config import AVATARS_DIR, PRODUCTS_DIR
+from httpx import AsyncClient
 from PIL import Image, ImageOps, UnidentifiedImageError
 
 
@@ -19,6 +20,9 @@ class Transform:
             email=reg_user.email,
             image_source=self.image_url,
         )
+
+    def transform_to_google_user(self, name: str, email: str, google_id: str) -> GoogleUser:
+        return GoogleUser(name=name, email=email, google_id=google_id, image_source=self.image_url)
 
     def create_product(
         self,
@@ -76,6 +80,14 @@ class Transform:
             img.save(save_path, "JPEG", quality=90)
 
             return os.path.join("/products/" + filepath)
+
+    async def get_google_user_picture(self, picture_link: str) -> bytes | None:
+        async with AsyncClient() as client:
+            response = await client.get(picture_link)
+            if response.status_code == 200:
+                binary_data = await response.aread()
+            return binary_data
+        return None
 
 
 transformer = Transform()

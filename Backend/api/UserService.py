@@ -2,7 +2,7 @@ from typing import List, Tuple
 
 from api.api_models.Product import Product
 from api.api_models.RegUser import Reguser
-from api.api_models.User import User
+from api.api_models.User import GoogleUser, User
 from database.DataClient import DatabaseClient, data_client
 from transform.Transform import Transform, transformer
 
@@ -19,7 +19,7 @@ class UserService:
     def create_user(self, hashed_password: str, reg_user: Reguser) -> User:
         return self.transform.transform_to_user(hashed_password, reg_user)
 
-    async def insert_user(self, user: User) -> bool:
+    async def insert_user(self, user: User | GoogleUser) -> bool:
         return await self.data_client.insert_user(user)
 
     def processs_profile_image(self, user_id: int, file: bytes) -> str:
@@ -30,6 +30,16 @@ class UserService:
 
     async def user_name_exist(self, username: str) -> Tuple[str, ...] | bool:
         return await self.data_client.user_exist(username)
+
+    async def get_google_picture_bytes(self, picture_link: str) -> bytes | None:
+        return await self.transform.get_google_user_picture(picture_link)
+
+    # async def user_google_id_exist(self, google_id: str) -> bool:
+
+    #     ...
+
+    def transform_to_google_user(self, name: str, email: str, google_id: str) -> GoogleUser:
+        return self.transform.transform_to_google_user(name, email, google_id)
 
     def product_create(
         self,
