@@ -36,7 +36,9 @@ function Products ({products, selected, setNum, query}: ProductList) {
 
     }, [query, products, selected])
 
-    setNum(filteredProducts.length)
+    useEffect(() => {
+        setNum(filteredProducts.length)
+    }, [filteredProducts])
 
 
 

@@ -57,6 +57,7 @@ function LoginPage() {
 
         localStorage.setItem("token", backendResponse.access_token);
         localStorage.setItem("name", backendResponse.username);
+        localStorage.setItem("user_id", backendResponse.user_id)
 
         setAuth({
             token: backendResponse.access_token,

@@ -1,9 +1,7 @@
-import Select from "react-select/base"
 
-import MasterTier from "./assets/mastertier.png"
-import { useContext, useState } from "react"
+import { useContext, useEffect, useState } from "react"
 import { AuthContext } from "./ContextAPI"
-
+import { useRef } from "react"
 
 function CreateProduct () {
 
@@ -17,9 +15,9 @@ function CreateProduct () {
     const [quantity, setQuantity] = useState<number | "">("")
     const [name, setName] = useState("")
     const [message, setMessage] = useState("")
-
+    const [profilePicture, setProfilePicture] = useState("")
     const [preview, setPreview] = useState("")
-
+    const fileInputRef = useRef<HTMLInputElement>(null)
 
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -37,6 +35,12 @@ function CreateProduct () {
 
     const handlePreview = () => {
         setPreview("")
+        setFile(null)
+
+        if (fileInputRef.current)
+        {
+            fileInputRef.current.value = ""
+        }
     }
 
 
@@ -86,12 +90,18 @@ function CreateProduct () {
         return
 
        }
-
-
-
-
     }
 
+     useEffect(() => {
+            const image_source = auth.image_url
+
+            if (!image_source)
+            {
+                return
+            }
+
+            setProfilePicture(image_source)
+       })
 
     return (
 
@@ -99,7 +109,7 @@ function CreateProduct () {
                 <div className="flex flex-col bg-white w-[1200px] h-[800px] shadow-md border-slate-200 rounded-lg overflow-hidden">
                     <div className="w-full h-32 bg-gradient-to-l from-yellow-400 to-green-400">
                         <label className="flex w-40 h-40 mt-13 ml-10 block">
-                            <img  src={MasterTier} className="w-full h-full rounded-full border-8 border-white object-cover" />
+                            <img  src={profilePicture} className="w-full h-full rounded-full border-8 border-white object-cover" />
                         </label>
                     </div>
                     <div className="flex flex-row w-full h-full mt-24">
@@ -145,7 +155,7 @@ function CreateProduct () {
                                         <label className="group bg-gray-100 border-gray-400 hover:bg-gray-200 rounded-2xl cursor-pointer transition-all flex flex-col w-40 h-40 items-center justify-center border-dashed border-2 hover:border-gray-700">
                                         <span className="text-gray-600 font-black text-8xl group-hover:scale-110 group-hover:text-gray-400 transition-transform">+</span>
                                         <span className="text-gray-400 group-hover:text-gray-800 font-medium transition-colors">Dodaj zdjęcie</span>
-                                        <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                                        <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} ref={fileInputRef} />
                                         </label>
                                         <p className="text-xs text-gray-400 mt-4 text-center">To zdjęcie będzie wyświetlane jako główne na aukcji.</p>
 

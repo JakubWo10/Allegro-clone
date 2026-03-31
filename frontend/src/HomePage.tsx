@@ -7,12 +7,25 @@ import { AuthContext } from './ContextAPI'
 import Products from './Components/Products'
 import { type Product } from './Components/Products'
 
+
+interface User {
+    name: string;
+    email: string;
+    image_source: string;
+
+}
+
+
 function HomePage(){
     const [query, setQuery] = useState("")
     const [selected, setSelected] = useState<string[]>([])
     const [number, setNumber] = useState<number>(0)
     const navigate = useNavigate()
-    const { auth } = useContext(AuthContext);
+    const { auth, setAuth } = useContext(AuthContext);
+    const [debounce, setDebounce] = useState("")
+    const [user, setUser] = useState<User>()
+    const BASE_URL = "http://127.0.0.1:8000";
+
 
 
     const ProductsList = [{user_id: 10, description: "dwadziescia", price: 20, category: "Elektronika"},
@@ -38,10 +51,66 @@ function HomePage(){
     const [products, setProducts] = useState<Product[]>(ProductsList)
 
 
+      useEffect(() => {
+        const token = localStorage.getItem("token");
+        const fetchData = async () => {
+        if (!token)
+        {
+            return;
+        }
+        const response = await fetch("http://127.0.0.1:8000/me",{
+            method: "GET",
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json"
+                }
+        })
+        if (!response.ok)
+        {
+            if (response.status === 401) {
+            setAuth({
+                name: null,
+                token: null,
+                image_url: null,
+                email: null,
+                user_id: null,
+
+            })
+            localStorage.clear()
+        }
+            return
+        }
 
 
 
-    console.log(query)
+        const data: User = await response.json()
+
+        setUser(data)
+        setAuth({
+            ...auth,
+        image_url: `${BASE_URL}${data.image_source}`,
+        })
+
+            localStorage.setItem("image_source", `${BASE_URL}${data.image_source}`)
+        }
+        fetchData();
+    },[])
+
+
+
+
+
+
+
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebounce(query)
+        }, 500)
+
+        return () => { clearTimeout(handler) }
+    }, [query])
+
+
 
 
     return (
@@ -74,7 +143,7 @@ function HomePage(){
                   <div className='flex  text-slate-400 text-xs font-medium uppercase justify-end items-end w-full'>
                             Znaleziono: <span className="text-orange-500 font-bold">{number}</span>
                         </div>
-                   <Products products={products} selected={selected} setNum={setNumber}  query={query} />
+                   <Products products={products} selected={selected} setNum={setNumber}  query={debounce} />
 
 
                 </div>

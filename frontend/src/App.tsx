@@ -6,16 +6,15 @@ import ProtectedRoutes from './ProtectedRoutes'
 import { AuthProvider } from './ContextAPI'
 import RegisterPage from './RegisterPage';
 import LoginPage from './LoginPage';
-import { GoogleOAuthProvider } from '@react-oauth/google';
 import ProfilPage from './ProfilPage';
 import ProductPage from './ProductPage';
 import CreateProduct from './CreateProduct';
+import Navbar from './Components/Navbar';
 
 function App() {
 
   return (
     <Router>
-      <GoogleOAuthProvider clientId=''>
     <AuthProvider>
       <Routes>
         <Route path="/register" element={<RegisterPage/>} />
@@ -30,8 +29,7 @@ function App() {
       </Routes>
 
    </AuthProvider>
-   </GoogleOAuthProvider>
-   </Router>
+    </Router>
   )
 }
 
