@@ -1,17 +1,17 @@
 from typing import List, Tuple
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Product(BaseModel):
 
-    name: str
-    price: float
-    description: str
-    owner_id: int
-    category: str
-    main_image: str
-    quantity: int
+    name: str = Field(min_length=3, max_length=50, description="Name of the product")
+    price: float = Field(gt=0, description="Price of product in PLN")
+    description: str = Field(min_length=10, max_length=3000, description="detailed product description")
+    owner_id: int = Field(description="ID of user who posted the product")
+    category: str = Field(description="Category of the posted product")
+    main_image: str = Field(description="Main picture of product")
+    quantity: int = Field(gt=0, description="Quantinity of product for sale")
 
     def to_dict(self):
         return {

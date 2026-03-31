@@ -144,7 +144,11 @@ async def login_google(google_token: GoogleToken):
         return {"access_token": token, "token_type": "bearer", "email": user_email, "username": user_name, "user_id": user_id}
 
     else:
-        return {"Message": "jajcoszka"}
+        if isinstance(result, bool) or result is None:
+            return {"Message": "Potem to usprawnie"}
+        existing_user_id = result[1]
+        token = create_token(user_name, str(existing_user_id))
+        return {"access_token": token, "token_type": "bearer", "email": user_email, "username": user_name, "user_id": existing_user_id}
 
 
 @app.post("/login")
@@ -182,14 +186,15 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()) -> Dict[str, s
 
 @app.get("/me", response_model=UserOut)
 async def get_my_data(token: str = Depends(oauth2_scheme)):
+
     user = await verify_token(token)
     if not user:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=MyHttpException.FORBIDDEN)
-
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=MyHttpException.UNAUTHORIZED)
+    print(settings.TOKEN_EXPIRES)
     return user
 
 
-@app.patch("/{user_id}/profile_image")
+@app.patch("/{user_id}/profile/image")
 async def update_image(user_id: int, file: UploadFile = File(...), token: str = Depends(oauth2_scheme)):
 
     user = await verify_token(token)
