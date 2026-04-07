@@ -5,6 +5,9 @@ Backend/.venv/
 **/*.py[cod]
 **/.mypy_cache/
 .mypy_cache/
+init.sql
+.env_docker_compose
+uploads
 
 Backend/uploads/avatar
 Backend/uploads/products

@@ -1,0 +1,41 @@
+services:
+  db:
+    build:
+      context: .
+      dockerfile: db.Dockerfile
+    container_name: postgres_db
+    env_file:
+      - .env_docker_compose
+    ports:
+      - "1234:5432"
+    volumes:
+        - pg_data:/var/lib/postgresql
+
+  api:
+    build:
+      context: .
+      dockerfile: api.Dockerfile
+    container_name: api
+    env_file:
+      - .env_docker_compose
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    volumes:
+        - ./uploads:/app/uploads
+
+  front:
+    build:
+      context: .
+      dockerfile: frontend.Dockerfile
+    container_name: frontend
+    env_file:
+      - .env_docker_compose
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
+
+volumes:
+  pg_data:
