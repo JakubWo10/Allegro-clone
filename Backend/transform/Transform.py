@@ -1,5 +1,6 @@
 import os
 from io import BytesIO
+from random import randint
 
 from api.api_models.Product import Product
 from api.api_models.RegUser import Reguser
@@ -13,16 +14,11 @@ class Transform:
 
     image_url = "test"
 
-    def transform_to_user(self, hashed_password: str, reg_user: Reguser) -> User:
-        return User(
-            name=reg_user.name,
-            hashed_password=hashed_password,
-            email=reg_user.email,
-            image_source=self.image_url,
-        )
+    def transform_to_user(self, hashed_password: str, role: str, reg_user: Reguser) -> User:
+        return User(name=reg_user.name, hashed_password=hashed_password, email=reg_user.email, image_source=self.image_url, role=role)
 
-    def transform_to_google_user(self, name: str, email: str, google_id: str) -> GoogleUser:
-        return GoogleUser(name=name, email=email, google_id=google_id, image_source=self.image_url)
+    def transform_to_google_user(self, name: str, email: str, google_id: str, role: str) -> GoogleUser:
+        return GoogleUser(name=name, email=email, google_id=google_id, image_source=self.image_url, role=role)
 
     def create_product(
         self,
@@ -31,7 +27,7 @@ class Transform:
         quantity: int,
         description: str,
         category: str,
-        owner_id: str,
+        owner_id: int,
     ) -> Product:
         return Product(
             name=name,
@@ -55,7 +51,9 @@ class Transform:
             if img.mode in ["RGBA", "P", "LA"]:
                 img = img.convert("RGB")
 
-            filepath: str = f"user_{user_id}.jpg"
+            random_number: int = randint(1, 99999)
+
+            filepath: str = f"user_{user_id}{random_number}.jpg"
 
             save_path = os.path.join(AVATARS_DIR, filepath)
             img.save(save_path, "JPEG", quality=90)

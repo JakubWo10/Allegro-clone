@@ -1,6 +1,7 @@
 from functools import wraps
 from typing import Callable, Dict, List, Tuple
 
+from api.api_models.Product import Product
 from config.config import settings
 from database.Contracts import DataProtocol
 from sqlalchemy import text
@@ -22,7 +23,7 @@ def safe_db_call(func: Callable):
 class DatabaseClient:
 
     _tables: Dict = {
-        "Users": {"columns": ("name", "email", "hashed_password", "image_source", "google_id")},
+        "Users": {"columns": ("name", "email", "hashed_password", "image_source", "google_id", "role")},
         "Product": {
             "columns": (
                 "name",
@@ -34,7 +35,7 @@ class DatabaseClient:
                 "quantity",
             )
         },
-        "Comments": {"columns": ("autor_id", "product_id", "description")},
+        "Comments": {"columns": ("autor_id", "product_id", "description", "created_at")},
     }
 
     def __init__(self, BASE_URL) -> None:
@@ -66,32 +67,30 @@ class DatabaseClient:
 
     def _user_exist(self, table_name: str, column_name: str) -> str:
 
-        return f"SELECT name, user_id, image_source, email FROM {table_name} WHERE {column_name} = :{column_name}"
+        return f"SELECT name, user_id, image_source, email, role FROM {table_name} WHERE {column_name} = :{column_name}"
 
     def _user_exist_with_password(self, table_name: str) -> str:
 
-        return f"SELECT name, hashed_password, image_source, email, user_id FROM {table_name} WHERE name = :name"
+        return f"SELECT name, hashed_password, image_source, email, user_id, role FROM {table_name} WHERE name = :name"
 
     def _image_update(self, table_name: str) -> str:
 
         return f"UPDATE {table_name} SET image_source = :image_source WHERE user_id = :user_id"
-
-    def _insert_product(self, table_name: str, columns: Tuple[str], values: Dict[str, str]) -> str:
-        columns_bind = self._columns_extractor(columns)
-        values_bind = self._values_extractor(values)
-
-        return f"INSERT INTO {table_name} ({columns_bind}) VALUES ({values_bind})"
 
     def _get_user_product(self, table_name: str) -> str:
         return f"SELECT product_id, name, price, description, owner_id, category, main_image, quantity FROM {table_name} WHERE owner_id = :user_id AND name = :name"
 
     def _get_all_products(self, table_name: str) -> str:
 
-        return f"SELECT product_id, name, price, description, owner_id, category, main_image, quantity FROM {table_name}"
+        return f"SELECT product_id, name, price, description, owner_id, category, main_image, quantity FROM {table_name} ORDER BY product_id LIMIT :limit OFFSET :offset"
 
     def _update_product_image(self, table_name: str) -> str:
 
         return f"UPDATE {table_name} SET main_image = :filepath WHERE product_id = :product_id"
+
+    def _exist_profile_image(self, table_name: str) -> str:
+
+        return f"SELECT user_id FROM {table_name}  WHERE image_source = :path AND user_id = :user_id"
 
     @safe_db_call
     async def insert_user(self, user_data: DataProtocol) -> bool:
@@ -152,7 +151,7 @@ class DatabaseClient:
         async with self.session_factory.begin() as session:
             await session.execute(
                 text(
-                    self._insert_product(
+                    self._insert(
                         "Product",
                         self._tables["Product"]["columns"],
                         data.to_dict(),
@@ -185,13 +184,32 @@ class DatabaseClient:
             return True
 
     @safe_db_call
-    async def get_all_products(self) -> List[Tuple[str, ...]] | bool:
+    async def get_all_products(self, limit: int, offset: int) -> Dict[str, object] | bool:
         async with self.session_factory.begin() as session:
-            all_products = await session.execute(text(self._get_all_products("Product")))
+            all_products = await session.execute(text(self._get_all_products("Product")), {"limit": limit + 1, "offset": offset})
             rows = all_products.fetchall()
 
-            if rows:
-                return rows
+            if not rows:
+                return False
+            if len(rows) > 12:
+                has_more = True
+            else:
+                has_more = False
+            product_list = []
+            for i in rows[:limit]:
+                product_item = Product.from_tuples(i)
+                product_list.append(product_item)
+
+            return {"products": product_list, "has_more": has_more, "skip": offset, "limit": limit}
+
+    @safe_db_call
+    async def exist_profile_image(self, user_id: int, path: str) -> bool:
+        async with self.session_factory.begin() as session:
+            result = await session.execute(text(self._exist_profile_image("Users")), {"user_id": user_id, "path": path})
+            row = result.fetchone()
+
+            if row:
+                return row
             return False
 
 

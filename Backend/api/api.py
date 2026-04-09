@@ -7,9 +7,22 @@ from api.api_models.RegUser import Reguser
 from api.api_models.UserOut import UserOut
 from api.UserService import User_service
 from config.config import AVATARS_DIR, PRODUCTS_DIR, settings
-from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile, status
+from fastapi import (
+    Depends,
+    FastAPI,
+    File,
+    Form,
+    HTTPException,
+    Security,
+    UploadFile,
+    status,
+)
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import (
+    OAuth2PasswordBearer,
+    OAuth2PasswordRequestForm,
+    SecurityScopes,
+)
 from fastapi.staticfiles import StaticFiles
 from google.auth.transport import requests
 from google.oauth2 import id_token
@@ -35,7 +48,10 @@ app.add_middleware(
 
 
 password_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl="/login",
+    scopes={"user": "Basic user role permissions /me, /addproduct /changepicture", "admin": "Manages the entire appliaction", "test": "useless scope for testing"},
+)
 
 
 def hash_password(password: str) -> str:
@@ -46,13 +62,17 @@ def verify_passowrd(password: str, hashed_password: str) -> bool:
     return password_context.verify(password, hashed_password)
 
 
-def create_token(username: str, user_id: str) -> str:
+def create_token(username: str, user_id: str, user_scope: str) -> str:
+    if user_scope == "admin":
+        scopes = ["user", "admin"]
+    else:
+        scopes = ["user"]
     exp_date = datetime.now(timezone.utc) + timedelta(minutes=settings.TOKEN_EXPIRES)
-    payload = {"sub": username, "exp": exp_date, "user_id": user_id}
+    payload = {"sub": username, "exp": exp_date, "user_id": user_id, "scopes": scopes}
     return jwt.encode(payload, settings.SECRET_KEY.get_secret_value(), algorithm=settings.ALGORITHM)
 
 
-async def verify_token(token: str) -> Tuple[str, ...] | bool:
+async def verify_token(token: str, security_scopes) -> Tuple[str, ...] | bool:
     if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -64,7 +84,8 @@ async def verify_token(token: str) -> Tuple[str, ...] | bool:
             settings.SECRET_KEY.get_secret_value(),
             algorithms=[settings.ALGORITHM],
         )
-        username: str = payload.get("sub")
+        username = payload.get("sub")
+        token_scopes = payload.get("scopes", [])
         if not username:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -76,12 +97,28 @@ async def verify_token(token: str) -> Tuple[str, ...] | bool:
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail=MyHttpException.UNAUTHORIZED,
             )
-        return exist
+
+        for scope in security_scopes.scopes:
+            if scope not in token_scopes:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail=MyHttpException.UNAUTHORIZED,
+                )
     except (PyJWTError, ExpiredSignatureError):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=MyHttpException.INVALID_TOKEN,
         )
+    return exist
+
+
+async def get_current_user(security_scopes: SecurityScopes, token: str = Depends(oauth2_scheme)) -> Tuple[str, ...] | bool:
+    user = await verify_token(token, security_scopes)
+
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=MyHttpException.UNAUTHORIZED)
+
+    return user
 
 
 @app.post("/register")
@@ -94,8 +131,7 @@ async def register(reg_user: Reguser) -> Dict[str, str]:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=MyHttpException.NAME_IS_TAKEN)
 
     user_password_hashed = hash_password(reg_user.password)
-
-    user = User_service.create_user(user_password_hashed, reg_user)
+    user = User_service.create_user(user_password_hashed, "user", reg_user)
     response = await User_service.insert_user(user)
 
     if response:
@@ -116,39 +152,44 @@ async def login_google(google_token: GoogleToken):
     user_email = id_info.get("email")
     user_name = id_info.get("name")
     user_google_id = id_info.get("sub")
-    user_google_picture_link = id_info.get("picture")
 
     result = await User_service.user_name_exist(user_name)
 
     if not result:
 
-        Google_user = User_service.transform_to_google_user(user_name, user_email, user_google_id)
+        Google_user = User_service.transform_to_google_user(user_name, user_email, user_google_id, "user")
 
         await User_service.insert_user(Google_user)
         user = await User_service.user_name_exist(user_name)
 
+        user_google_picture_link = id_info.get("picture")
+
         if isinstance(user, bool) or user is None:
-            return {"Message": "Cos poszlo nie tak"}
+            return {"Message": "Something went wrong"}
 
         user_id = int(user[1])
+        user_scope = user[4]
         picture_bytes = await User_service.get_google_picture_bytes(user_google_picture_link)
 
         if picture_bytes is None:
-            return {"Message": "Cos poszlo nie tak"}
+            return {"Message": "Something went wrong"}
 
         filepath = User_service.processs_profile_image(user_id, picture_bytes)
         await User_service.update_profile_image(filepath, user_id)
 
-        token = create_token(user_name, str(user_id))
+        token = create_token(user_name, str(user_id), user_scope)
 
-        return {"access_token": token, "token_type": "bearer", "email": user_email, "username": user_name, "user_id": user_id}
+        return {"access_token": token, "token_type": "bearer", "email": user_email, "username": user_name, "user_id": user_id, "image_source": filepath}
 
     else:
         if isinstance(result, bool) or result is None:
-            return {"Message": "Potem to usprawnie"}
+            return {"Message": "Later im gonna improve it"}
+
         existing_user_id = result[1]
-        token = create_token(user_name, str(existing_user_id))
-        return {"access_token": token, "token_type": "bearer", "email": user_email, "username": user_name, "user_id": existing_user_id}
+        exsisting_image_source = result[2]
+        existing_user_scope = result[5]
+        token = create_token(user_name, str(existing_user_id), existing_user_scope)
+        return {"access_token": token, "token_type": "bearer", "email": user_email, "username": user_name, "user_id": existing_user_id, "image_source": exsisting_image_source}
 
 
 @app.post("/login")
@@ -176,33 +217,23 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()) -> Dict[str, s
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=MyHttpException.INVALID_PASSWORD,
         )
-
+    user_scope = exist[5]
     user_id = str(exist[4])
     user_email = exist[3]
+    image_source = exist[2]
+    token = create_token(user_name, user_id, user_scope)
 
-    token = create_token(user_name, user_id)
-    return {"access_token": token, "token_type": "bearer", "user_email": user_email, "username": user_name}
+    return {"access_token": token, "token_type": "bearer", "user_email": user_email, "username": user_name, "user_id": user_id, "image_source": image_source}
 
 
 @app.get("/me", response_model=UserOut)
-async def get_my_data(token: str = Depends(oauth2_scheme)):
+async def get_my_data(user: str = Depends(get_current_user)):
 
-    user = await verify_token(token)
-    if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=MyHttpException.UNAUTHORIZED)
-    print(settings.TOKEN_EXPIRES)
     return user
 
 
 @app.patch("/{user_id}/profile/image")
-async def update_image(user_id: int, file: UploadFile = File(...), token: str = Depends(oauth2_scheme)):
-
-    user = await verify_token(token)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=MyHttpException.UNAUTHORIZED,
-        )
+async def update_image(user_id: int, file: UploadFile = File(...), user: str = Security(get_current_user, scopes=["user"])):
 
     if isinstance(user, bool) or user is None:
         raise HTTPException(
@@ -224,9 +255,9 @@ async def update_image(user_id: int, file: UploadFile = File(...), token: str = 
 
     result = await User_service.update_profile_image(path, user_id)
     if not result:
-        raise HTTPException(status_code=400, detail=MyHttpException.BAD_REQUEST)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=MyHttpException.BAD_REQUEST)
 
-    return {"Message": "Zaktualizowano zdjecie poprawnie"}
+    return {"Message": "Succesfully updated image", "path": path}
 
 
 @app.post("/product/create")
@@ -236,23 +267,12 @@ async def create_product(
     description: str = Form(...),
     price: float = Form(...),
     category: str = Form(...),
-    token: str = Depends(oauth2_scheme),
+    user: str = Security(get_current_user, scopes=["user"]),
     file: UploadFile = File(...),
 ):
 
     try:
-        user = await verify_token(token)
-        if not user:
-            raise PyJWTError
-    except PyJWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=MyHttpException.UNAUTHORIZED,
-        )
-
-    validate_price, validate_quantity = price, quantity
-    try:
-        if validate_price < 0 or validate_quantity < 1:
+        if price < 0 or quantity < 0:
             raise ValueError()
     except ValueError:
         raise HTTPException(
@@ -260,55 +280,38 @@ async def create_product(
             detail=MyHttpException.INVALID_NUMBER_VALUES,
         )
 
-    if isinstance(user, bool) or user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=MyHttpException.UNAUTHORIZED,
-        )
-
-    owner_id = int(user[4])
-    user_from_database = user[0]
-    product = User_service.product_create(user_from_database, price, description, quantity, category, owner_id)
-    await User_service.send_product_to_data(product)
-
+    content = await file.read()
     if file.content_type not in ["image/jpeg", "image/png"]:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=MyHttpException.UNAUTHORIZED,
         )
 
-    content = await file.read()
+    owner_id = user[4]
+    product = User_service.product_create(name, price, description, quantity, category, int(owner_id))
+    await User_service.send_product_to_data(product)
+
     product_id_tuple = await User_service.get_product_id(int(owner_id), name)
 
     if isinstance(product_id_tuple, bool):
+        print(product_id_tuple)
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=MyHttpException.OTHER_ERROR,
         )
+
     product_id = product_id_tuple[0]
 
     filepath = User_service.processs_main_product_image(product_id, content)
 
-    await User_service.update_profile_image(filepath, owner_id)
+    await User_service.update_product_image(product_id, filepath)
 
-    return {"Message": "Poprawnie dodano produkt"}
+    return {"Message": "Succesfully added product"}
 
 
 @app.get("/products")
-async def get_all_products(token: str = Depends(oauth2_scheme)):
+async def get_all_products(skip: int = 0):
+    LIMIT = 12
+    product_list = await User_service.get_all_prods(LIMIT, skip)
 
-    try:
-        user = await verify_token(token)
-        if not user:
-            raise PyJWTError
-    except PyJWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=MyHttpException.UNAUTHORIZED,
-        )
-
-    if isinstance(user, bool) or user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=MyHttpException.UNAUTHORIZED,
-        )
+    return product_list
