@@ -48,6 +48,14 @@ function RegisterPage() {
                 })
             }
         )
+        if (!response.ok)
+        {
+            const errorResponse = await response.json()
+            const error_name = errorResponse.detail[0].msg
+
+            setError(error_name)
+            return
+        }
         const data = await response.json()
         const information = data.detail
         setInformation(information)
@@ -56,7 +64,6 @@ function RegisterPage() {
             setError(err.message || "Błąd połączenia z serwerem")
         }
 
-        setError(false)
         setName("")
         setPassowrd("")
         setRepeatedPassword("")

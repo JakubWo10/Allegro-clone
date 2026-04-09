@@ -117,6 +117,7 @@ function LoginPage() {
         setError(false)
         localStorage.setItem("token",data.access_token)
         localStorage.setItem("name", name)
+         localStorage.setItem("user_id", data.user_id)
 
         setAuth({
             user_id: data.user_id,

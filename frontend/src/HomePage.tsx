@@ -25,30 +25,14 @@ function HomePage(){
     const [debounce, setDebounce] = useState("")
     const [user, setUser] = useState<User>()
     const BASE_URL = "http://127.0.0.1:8000";
+    const [currentPage, setCurrentPage] = useState(0)
+    const [skip, setSkip] = useState(1)
+    const [products, setProducts] = useState<Product[]>([])
+    const [hasMore, setHasMore] = useState(true);
+    const [loading, setLoading] = useState(false);
 
 
 
-    const ProductsList = [{user_id: 10, description: "dwadziescia", price: 20, category: "Elektronika"},
-                            {user_id: 10, description: "dwa", price: 20, category: "Moda"},
-                            {user_id: 10, description: "dwadziescia", price: 20, category: "Elektronika"},
-                            {user_id: 10, description: "cztery", price: 20, category: "Obuwie"},
-                            {user_id: 10, description: "das", price: 20, category: "Dom"},
-                            {user_id: 10, description: "dwadziescia", price: 20, category: "AGD"},
-                            {user_id: 10, description: "czx", price: 20, category: "Sport"},
-                            {user_id: 10, description: "dwadziescia", price: 20, category: "Sport"},
-                            {user_id: 10, description: "da", price: 20, category: "Sport"},
-                             {user_id: 10, description: "dwapoiajdziescia", price: 20, category: "Sport"},
-                            {user_id: 10, description: "xda", price: 20, category: "Sport"},
-                            {user_id: 10, description: "hsd", price: 20, category: "Sport"},
-                             {user_id: 10, description: "dwadziescia", price: 20, category: "Sport"},
-                            {user_id: 10, description: "jrty", price: 20, category: "Sport"},
-                            {user_id: 10, description: "dwadziescia", price: 20, category: "Sport"},
-                             {user_id: 10, description: "wq", price: 20, category: "Sport"},
-                            {user_id: 10, description: "as", price: 20, category: "Sport"},
-                            {user_id: 10, description: "xc", price: 20, category: "Sport"}
-    ]
-
-    const [products, setProducts] = useState<Product[]>(ProductsList)
 
 
       useEffect(() => {
@@ -80,11 +64,7 @@ function HomePage(){
         }
             return
         }
-
-
-
         const data: User = await response.json()
-
         setUser(data)
         setAuth({
             ...auth,
@@ -96,12 +76,6 @@ function HomePage(){
         fetchData();
     },[])
 
-
-
-
-
-
-
     useEffect(() => {
         const handler = setTimeout(() => {
             setDebounce(query)
@@ -109,9 +83,6 @@ function HomePage(){
 
         return () => { clearTimeout(handler) }
     }, [query])
-
-
-
 
     return (
         <>
@@ -144,7 +115,11 @@ function HomePage(){
                             Znaleziono: <span className="text-orange-500 font-bold">{number}</span>
                         </div>
                    <Products products={products} selected={selected} setNum={setNumber}  query={debounce} />
-
+                   {hasMore && (
+                    <button onClick={() => setSkip(prev => prev + 12)}>
+                        {loading ? "Ładowanie..." : "Pokaż więcej"}
+                    </button>
+                    )}
 
                 </div>
                 <div className='flex bg-white w-full lg:w-64 h-40 border border-slate-200'>

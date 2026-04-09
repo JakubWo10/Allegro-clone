@@ -6,7 +6,7 @@ import { useRef } from "react"
 function CreateProduct () {
 
     const { auth } = useContext(AuthContext)
-    const  token  = auth.token
+
 
     const [category, setCategory] = useState<string>("")
     const [file, setFile] = useState<File | null>(null)
@@ -51,24 +51,26 @@ function CreateProduct () {
         {
             return
         }
-        if (!category.trim() || !description.trim() || !name.trim() || ( quantity !== "" && quantity < 1)  || (price !== "" && price < 0) )
+        if (!category.trim() || !description.trim() || !name.trim())
         {
             return
         }
+        const validPrice = price === "" ? "0" : price.toString();
+        const validQuantity = quantity === "" ? "0" : quantity.toString();
 
         const formData = new FormData();
         formData.append("file", file)
         formData.append("category", category)
         formData.append("description", description)
-        formData.append("price", String(price))
-        formData.append("quantity", String(quantity))
+        formData.append("price", validPrice)
+        formData.append("quantity", validQuantity)
         formData.append("name", name)
 
         try {
 
             const response = await fetch(`http://127.0.0.1:8000/product/create`, {
             method: "POST",
-            headers: {"Authorization": `Bearer ${token}`},
+            headers: {"Authorization": `Bearer ${auth.token}`},
             body: formData
 
         })

@@ -15,10 +15,13 @@ function ProfilPage() {
     const navigate = useNavigate()
 
     const { auth, setAuth } = useContext(AuthContext)
-    const [image_source, setImagelink] = useState("")
+    const [image_source, setImagelink] = useState<string>("")
     const [file, setFile] = useState<File | null>(null)
     const [preview, setPreview] = useState("")
     const [message, setMessage] = useState("")
+    const BASE_URL = "http://127.0.0.1:8000";
+
+
     function logout()
     {
 
@@ -36,17 +39,16 @@ function ProfilPage() {
 
         navigate("/")
     }
+
     useEffect(() => {
-        const image_link = localStorage.getItem("image_source")
-        if (image_link)
-        {
-            setImagelink(image_link)
+        const image_link = localStorage.getItem("image_source");
+        if (image_link) {
+            setImagelink(image_link);
+            }
+        }, []);
 
-        }
-    })
-
-    function handlePreview(e: React.ChangeEvent<HTMLInputElement>) {
-
+    function handlePreview(e: React.ChangeEvent<HTMLInputElement>)
+    {
         if (e.target.files && e.target.files.length > 0)
         {
             const selectedFile = e.target.files[0]
@@ -55,8 +57,6 @@ function ProfilPage() {
             const urlObject = URL.createObjectURL(selectedFile)
             setPreview(urlObject)
         }
-
-
     }
 
 
@@ -76,30 +76,34 @@ function ProfilPage() {
             return
         }
 
-
         try {
+            const response = await fetch(`http://127.0.0.1:8000/${user_id}/profile/image`,
+                {
+                    method: "PATCH",
+                    headers: {"Authorization": `Bearer ${auth.token}`},
+                    body: data
+                }
+            )
+                const backendResponse = await response.json()
 
+                if(!response.ok)
+                {
+                    console.log(response)
+                    return
+                }
 
-        const response = await fetch(`http://127.0.0.1:8000/${user_id}/profile/image`,
-            {
-                method: "PATCH",
-                headers: {"Authorization": `Bearer ${auth.token}`},
-                body: data
-            }
-        )
-            const backendResponse = await response.json()
+                setMessage(backendResponse.Message)
+               ;
 
-            if(!response.ok)
-            {
-                console.log(response)
-                return
-            }
+                const newImageUrl = `${BASE_URL}${backendResponse.path}`;
+                 console.log(newImageUrl)
+                setImagelink(newImageUrl);
 
-            setMessage(backendResponse.Message)
+                setAuth({ ...auth, image_url: newImageUrl });
+                localStorage.setItem("image_source", newImageUrl);
+                setPreview("");
+                setMessage("Zdjęcie zmienione pomyślnie!");
         }
-
-
-
         catch(err)
         {
             console.log(err)

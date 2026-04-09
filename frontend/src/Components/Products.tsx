@@ -3,10 +3,14 @@ import { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 
 export interface Product {
-    user_id: number;
+    product_id: number;
+    name: string;
+    owner_id: number;
     description: string;
     price: number;
     category: string;
+    main_image: string;
+    quantity: number;
 }
 
 
@@ -25,8 +29,8 @@ function Products ({products, selected, setNum, query}: ProductList) {
 
     const navigate = useNavigate()
 
-    function naviageToDetailPage (user_id : number) {
-        navigate(`/product/${user_id}`)
+    function naviageToDetailPage (product_id : number) {
+        navigate(`/product/${product_id}`)
     }
 
     const filteredProducts = useMemo(() => {
@@ -47,10 +51,10 @@ function Products ({products, selected, setNum, query}: ProductList) {
             {filteredProducts.map((product, index) => {
 
                 return (
-                <div onClick = {() => naviageToDetailPage(product.user_id)} key={index} className="bg-white p-2 w-64 h-64 rounded-2xl shadow-lg border border-slate-100 flex flex-col justify-between hover:shadow-2xl transition-shadow cursor-pointer items-center">
+                <div onClick = {() => naviageToDetailPage(product.product_id)} key={index} className="bg-white p-2 w-64 h-64 rounded-2xl shadow-lg border border-slate-100 flex flex-col justify-between hover:shadow-2xl transition-shadow cursor-pointer items-center">
                     <p className="text-gray-600 text-left">{product.description} - {product.category} </p>
                     <label>
-                        <img src={Elektronika} className="w-40 h-40 flex cursor-pointer "/>
+                        <img src={`http://127.0.0.1:8000${product.main_image}`} className="w-40 h-40 flex cursor-pointer "/>
                     </label>
                     <p className="text-orange-500 font-bold mt-2">{product.price} PLN</p>
                 </div>
