@@ -6,6 +6,7 @@ import Categories from './Components/Categories'
 import { AuthContext } from './ContextAPI'
 import Products from './Components/Products'
 import { type Product } from './Components/Products'
+import { preview } from 'vite'
 
 
 interface User {
@@ -26,13 +27,43 @@ function HomePage(){
     const [user, setUser] = useState<User>()
     const BASE_URL = "http://127.0.0.1:8000";
     const [currentPage, setCurrentPage] = useState(0)
-    const [skip, setSkip] = useState(1)
+    const [skip, setSkip] = useState(0)
     const [products, setProducts] = useState<Product[]>([])
     const [hasMore, setHasMore] = useState(true);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("")
 
 
+      useEffect(() => {
+        const fetchProdcuts = async () => {
+            try
+            {
+                const response = await fetch(`http://127.0.0.1:8000/products?skip=${skip}`)
 
+                const data = await response.json()
+                if (!response.ok)
+                {
+                    setError(data.message)
+                    return
+                }
+                setProducts(prev => {
+                    if (skip === 0)
+                    {
+                        return data.products
+                    }
+                    return [...prev, ...data.products]
+                })
+                setHasMore(data.has_more)
+
+
+            }
+            catch (err)
+            {
+                console.log(err)
+            }
+        }
+        fetchProdcuts()
+      }, [skip])
 
 
       useEffect(() => {
@@ -87,22 +118,6 @@ function HomePage(){
     return (
         <>
         <div className="flex flex-col h-screen w-full">
-            <div className="flex bg-gradient-to-l from-yellow-400 to-green-400 w-full h-14 shadow-lg shadow-gray-700 flex-row gap-15 justify-between px-3">
-                <div className='flex text-center gap-2'>
-                    <p className="flex py-2 text-white font-bold text-2xl italic cursor-default">Sklepik</p>
-                </div>
-                <div className='flex flex-row flex-start  '>
-                    <button className="h-full px-4 text-white font-bold uppercase text-xs tracking-wider transition-all duration-50 hover:text-black hover:bg-indigo-900/10 hover:border-b-4 hover:border-green-500 hover:text-white  "> Puste pole </button>
-                    <button className="h-full px-4 text-white font-bold uppercase text-xs tracking-wider transition-all duration-50 hover:text-black hover:bg-indigo-900/10 hover:border-b-4 hover:border-green-500 hover:text-white "> wiadomosci </button>
-                    <button className="h-full px-4 text-white font-bold uppercase text-xs tracking-wider transition-all duration-50 hover:text-black hover:bg-indigo-900/10 hover:border-b-4 hover:border-green-500 hover:text-white " > Koszyk </button>
-                    {auth.token ?
-                    <button onClick={() => navigate("/Profil")} className="h-full px-4 text-white font-bold uppercase text-xs tracking-wider transition-all
-                    duration-50 hover:text-black hover:bg-indigo-900/10 hover:border-b-4 hover:border-green-500 hover:text-white "> Profil </button>:
-                    <button onClick = {() => navigate("/login")} className="h-full px-4 text-white font-bold uppercase text-xs tracking-wider transition-all
-                     duration-50 hover:text-black hover:bg-indigo-900/10 hover:border-b-4 hover:border-green-500 hover:text-white "> Zaloguj sie</button>
-                    }
-                </div>
-            </div>
             <div className= "flex flex-col lg:flex-row bg-white w-full h-full gap-4 p-3">
                 <div className='flex flex-col bg-white w-full lg:w-1/4 h-auto gap-3 rounded-md shadow-2xl border border-slate-200'>
                 <SearchTile input={query} onInputChange={setQuery}/>
@@ -110,17 +125,18 @@ function HomePage(){
 
 
                 </div>
-                  <div className='flex bg-white w-full lg:flex-1 h-screen rounded-lg shadow-xl border border-slate-200 flex-wrap overflow-y-auto'>
+                  <div className='flex bg-white w-full lg:flex-1 h-screen rounded-lg shadow-xl border border-slate-200 flex-wrap overflow-y-auto justify-center'>
                   <div className='flex  text-slate-400 text-xs font-medium uppercase justify-end items-end w-full'>
                             Znaleziono: <span className="text-orange-500 font-bold">{number}</span>
                         </div>
                    <Products products={products} selected={selected} setNum={setNumber}  query={debounce} />
+                   <div className='flex justify-center'>
                    {hasMore && (
-                    <button onClick={() => setSkip(prev => prev + 12)}>
+                    <button  className= "flex items-center justify-center" onClick={() => setSkip(prev => prev + 12)}>
                         {loading ? "Ładowanie..." : "Pokaż więcej"}
                     </button>
                     )}
-
+                    </div>
                 </div>
                 <div className='flex bg-white w-full lg:w-64 h-40 border border-slate-200'>
 

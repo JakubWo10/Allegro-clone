@@ -12,8 +12,8 @@ function Navbar() {
 
     return (
 
-        <div className="flex flex-col h-screen w-full">
-            <div className="flex bg-gradient-to-l from-yellow-400 to-green-400 w-full h-14 shadow-lg shadow-gray-700 flex-row gap-15 justify-between px-3">
+        <div className="sticky top-0 flex flex-col w-full">
+            <div className="flex bg-gradient-to-l from-yellow-400 to-green-400 w-full h-14  shadow-gray-700 flex-row gap-15 justify-between px-3">
                 <div className='flex text-center gap-2'>
                     <p className="flex py-2 text-white font-bold text-2xl italic cursor-default">Sklepik</p>
                 </div>
