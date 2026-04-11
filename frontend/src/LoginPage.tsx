@@ -138,7 +138,7 @@ function LoginPage() {
 
     return (
         <>
-            <div className="flex items-center justify-center bg-gray-200 w-screen h-screen">
+            <div className="flex items-center justify-center bg-gray-200 w-full h-[calc(100vh-3.5rem)]">
                 <div className="flex flex-col items-center justify-center w-[650px] h-[500px] shadow-md shadow-black bg-white rounded-xl gap-4">
                         <h1 className="flex items-start justify-start font-bold text-3xl font-sans antialiased lining-nums"> Zaloguj sie </h1>
                     {error && <h1 className="flex items-center justify-center bg-red-500 px-6 py-3 min-w-[200px] max-w-[90%] tranistion-all text-center text-white rounded-xl"> {error} </h1>}

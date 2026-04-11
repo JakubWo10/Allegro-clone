@@ -36,7 +36,7 @@ function Products ({products, selected, setNum, query}: ProductList) {
     const filteredProducts = useMemo(() => {
         const result = selected.length > 0 ? products.filter(item => selected.includes(item.category)) : products
 
-        return query.length > 0 ? result.filter(item => item.description.includes(query.toLocaleLowerCase())) : result
+        return query.length > 0 ? result.filter(item => item.name.includes(query.toLocaleLowerCase())) : result
 
     }, [query, products, selected])
 
@@ -52,7 +52,7 @@ function Products ({products, selected, setNum, query}: ProductList) {
 
                 return (
                 <div onClick = {() => naviageToDetailPage(product.product_id)} key={index} className="bg-white p-2 w-64 h-64 rounded-2xl shadow-lg border border-slate-100 flex flex-col justify-between hover:shadow-2xl transition-shadow cursor-pointer items-center">
-                    <p className="text-gray-600 text-left">{product.description} - {product.category} </p>
+                    <p className="text-gray-600 text-left">{product.name} - {product.category} </p>
                     <label>
                         <img src={`http://127.0.0.1:8000${product.main_image}`} className="w-40 h-40 flex cursor-pointer "/>
                     </label>

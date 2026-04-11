@@ -116,8 +116,8 @@ function ProfilPage() {
 
 
     return (
-      <div className='flex bg-gray-100 w-screen h-screen justify-center items-center'>
-    <div className='flex flex-col bg-white w-[1200px] h-[800px] shadow-xl rounded-xl overflow-hidden'>
+      <div className='flex bg-gray-100 w-full min-h-screen justify-center items-center overflow-hidden'>
+    <div className='flex flex-col bg-white max-w-[1000px] h-[800px] shadow-xl rounded-xl overflow-hidden'>
         <div className='flex items-center bg-gradient-to-l from-yellow-400 to-green-400 w-full h-[200px]' >
             </div>
 

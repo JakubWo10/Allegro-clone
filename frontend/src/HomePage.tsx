@@ -129,15 +129,18 @@ function HomePage(){
                   <div className='flex  text-slate-400 text-xs font-medium uppercase justify-end items-end w-full'>
                             Znaleziono: <span className="text-orange-500 font-bold">{number}</span>
                         </div>
-                   <Products products={products} selected={selected} setNum={setNumber}  query={debounce} />
-                   <div className='flex justify-center'>
+                    <Products products={products} selected={selected} setNum={setNumber}  query={debounce} />
+
+
                    {hasMore && (
+                    <div className='flex justify-center w-full py-6 mt-auto'>
                     <button  className= "flex items-center justify-center" onClick={() => setSkip(prev => prev + 12)}>
                         {loading ? "Ładowanie..." : "Pokaż więcej"}
                     </button>
+                      </div>
                     )}
                     </div>
-                </div>
+
                 <div className='flex bg-white w-full lg:w-64 h-40 border border-slate-200'>
 
                 </div>
