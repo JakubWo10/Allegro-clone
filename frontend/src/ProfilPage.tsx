@@ -41,7 +41,7 @@ function ProfilPage() {
     }
 
     useEffect(() => {
-        const image_link = localStorage.getItem("image_source");
+        const image_link = localStorage.getItem("image_url");
         if (image_link) {
             setImagelink(image_link);
             }
@@ -100,7 +100,7 @@ function ProfilPage() {
                 setImagelink(newImageUrl);
 
                 setAuth({ ...auth, image_url: newImageUrl });
-                localStorage.setItem("image_source", newImageUrl);
+                localStorage.setItem("image_url", newImageUrl);
                 setPreview("");
                 setMessage("Zdjęcie zmienione pomyślnie!");
         }
@@ -117,7 +117,7 @@ function ProfilPage() {
 
     return (
       <div className='flex bg-gray-100 w-full min-h-screen justify-center items-center overflow-hidden'>
-    <div className='flex flex-col bg-white max-w-[1000px] h-[800px] shadow-xl rounded-xl overflow-hidden'>
+    <div className='flex flex-col bg-white min-w-[1200px] h-[800px] shadow-xl rounded-xl overflow-hidden'>
         <div className='flex items-center bg-gradient-to-l from-yellow-400 to-green-400 w-full h-[200px]' >
             </div>
 
@@ -167,14 +167,8 @@ function ProfilPage() {
     </div>
 </div>
 
-
     )
 
-
-
 }
-
-
-
 
 export default ProfilPage

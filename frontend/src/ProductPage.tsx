@@ -1,21 +1,57 @@
-import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import AGD from './assets/AGD.png';
 
 
-
+interface UserProduct {
+    proudct_id: number;
+    name: string;
+    price: number;
+    description: string;
+    owner_id: number;
+    category: string;
+    main_image: string;
+    quantity: number;
+    owner_name: string;
+    owner_image: string;
+}
 
 
 function ProductPage ()
 {
 
-    const { id } = useParams()
 
+
+    const { id } = useParams()
+    const navigate = useNavigate()
     const [files, setFiles] = useState([])
     const [page, setPageName] = useState("Dane")
     const [count, setCount] = useState(1)
+    const [product, setProduct] = useState<UserProduct | null>(null)
 
+    useEffect(() => {
+        const fetchadata = async () => {
+            const response = await fetch(`http://127.0.0.1:8000/product/${id}`)
+
+            const data = await response.json()
+            if (!response.ok)
+            {
+                navigate("/")
+                return
+            }
+            console.log(data)
+            setProduct(data)
+            console.log(product)
+        }
+        fetchadata();
+
+    },[id, navigate])
+
+    if (!product) {
+        return <div className="loading">Ładowanie danych...</div>;
+    }
    return (
+
     <div className="flex flex-row bg-gray-100 min-h-screen w-full pt-3 gap-2 p-2">
         <div className="flex-1 border-2 border-green-300 bg-white rounded-xl shadow-sm overflow-hidden">
             <div className="flex flex-col w-full h-full">
@@ -25,7 +61,7 @@ function ProductPage ()
                             OPIS PRODUKTU KTÓRY BĘDZIE NORMALNIE POTEM
                         </h2>
                         <div className="bg-gray-50 p-4 rounded-lg w-full flex justify-center h-full">
-                            <img src={AGD} className="object-contain max-h-64 drop-shadow-md" alt="Produkt"/>
+                            <img src={`http://127.0.0.1:8000${product.main_image}`} className="object-contain max-h-64 drop-shadow-md" alt="Produkt"/>
                         </div>
                         <div className="flex flex-col items-start justify-start w-full">
                             <h1>
@@ -45,10 +81,10 @@ function ProductPage ()
                             <span className="text-xs uppercase font-bold text-gray-400">Produkt wystawiony przez:</span>
                             <div className="flex flex-row items-center gap-3 bg-gray-50 p-2 pr-4 rounded-full border border-gray-100">
                                 <div className="w-10 h-10 rounded-full border-2 border-white shadow-sm overflow-hidden cursor-pointer">
-                                    <img src={AGD} className="w-full h-full object-cover" alt="Avatar"/>
+                                    <img src={`http://127.0.0.1:8000${product.owner_image}`} className="w-full h-full object-cover" alt="Avatar"/>
                                 </div>
                                 <h1 className="cursor-pointer font-bold text-gray-700 hover:text-blue-600 transition-colors">
-                                    Nazwa użytkownika
+                                    {product.owner_name}
                                 </h1>
                             </div>
                         </div>
@@ -73,20 +109,23 @@ function ProductPage ()
                         {page === "Dane" &&
                          <div className="flex w-full bg-purple-50 p-6 rounded-xl border-l-5 border-r-5 border-purple-400 flex-col gap-3">
                             <h5 className="flex items-center gap-2 font-medium text-gray-700">
-                                <span className="w-2 h-2 bg-purple-400 rounded-full"></span> Name: Mikser 2000
+                                <span className="w-2 h-2 bg-purple-400 rounded-full"></span> Nazwa produktu: {product.name}
                             </h5>
                             <h5 className="flex items-center gap-2 font-medium text-gray-700">
-                                <span className="w-2 h-2 bg-purple-400 rounded-full"></span> Quantity: 1 sztuka
+                                <span className="w-2 h-2 bg-purple-400 rounded-full"></span> Dostępna ilość: {product.quantity}
                             </h5>
                             <h5 className="flex items-center gap-2 font-medium text-gray-700">
                                 <span className="w-2 h-2 bg-purple-400 rounded-full"></span> Date: 11.04.2026
+                            </h5>
+                              <h5 className="flex items-center gap-2 font-medium text-gray-700">
+                                <span className="w-2 h-2 bg-purple-400 rounded-full"></span> Kategoria: {product.category}
                             </h5>
                         </div>
                         }
                         {page === "Opis" &&
                         <div className="flex w-full bg-purple-50 p-6 rounded-xl border-l-5 border-r-5 border-green-400 flex-col gap-3">
 
-                            <text> OPIS WARIATA </text>
+                            <text> {product.description} </text>
 
                         </div>
 
@@ -152,7 +191,7 @@ function ProductPage ()
         <div className="flex-1 border-2 border-blue-500 bg-white rounded-xl shadow-sm p-6">
             <h2 className="text-2xl font-bold text-gray-800">Informacje od sprzedawcy</h2>
             <div className="flex w-full bg-purple-50 p-6 rounded-xl border-l-5 border-r-5 border-green-400 flex-col gap-3">
-                        <text> np czemu sprzdaje, </text>
+                        <h2> np czemu sprzdaje, </h2>
                   </div>
             <div className="flex flex-col mt-4 h-40 rounded-lg ">
                 <h1> 399,99 PLN</h1>

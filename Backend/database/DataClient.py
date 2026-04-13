@@ -1,7 +1,6 @@
 from functools import wraps
 from typing import Callable, Dict, List, Tuple
 
-from api.api_models.Product import Product
 from config.config import settings
 from database.Contracts import DataProtocol
 from sqlalchemy import text
@@ -92,18 +91,20 @@ class DatabaseClient:
 
         return f"SELECT user_id FROM {table_name}  WHERE image_source = :path AND user_id = :user_id"
 
+    def _get_prodcut_comment(self, table_name: str) -> str:
+
+        return f"SELECT autor_id, product_id, description, created_at FROM {table_name}"
+
+    def _get_single_product_data(self, table_name: str) -> str:
+
+        return f"SELECT product_id, Product.name, price, description, owner_id, category, main_image, quantity, Users.name, Users.image_source FROM {table_name} JOIN Users ON Users.user_id = Product.owner_id WHERE product_id = :product_id"
+
     @safe_db_call
-    async def insert_user(self, user_data: DataProtocol) -> bool:
+    async def insert_user(self, data: DataProtocol) -> bool:
         async with self.session_factory.begin() as session:
             await session.execute(
-                text(
-                    self._insert(
-                        "Users",
-                        self._tables["Users"]["columns"],
-                        user_data.to_dict(),
-                    )
-                ),
-                user_data.to_dict(),
+                text(self._insert("Users", self._tables["Users"]["columns"], data.to_dict())),
+                data.to_dict(),
             )
             return True
 
@@ -150,15 +151,16 @@ class DatabaseClient:
     async def insert_product(self, data: DataProtocol) -> bool:
         async with self.session_factory.begin() as session:
             await session.execute(
-                text(
-                    self._insert(
-                        "Product",
-                        self._tables["Product"]["columns"],
-                        data.to_dict(),
-                    )
-                ),
+                text(self._insert("Product", self._tables["Product"]["columns"], data.to_dict())),
                 data.to_dict(),
             )
+            return True
+
+    @safe_db_call
+    async def insert_comment(self, data: DataProtocol) -> bool:
+        async with self.session_factory.begin() as session:
+            await session.execute(text(self._insert("Comments", self._tables["Comments"]["columns"], data.to_dict())), data.to_dict())
+
             return True
 
     @safe_db_call
@@ -191,16 +193,13 @@ class DatabaseClient:
 
             if not rows:
                 return False
+
             if len(rows) > 12:
                 has_more = True
             else:
                 has_more = False
-            product_list = []
-            for i in rows[:limit]:
-                product_item = Product.from_tuples(i)
-                product_list.append(product_item)
 
-            return {"products": product_list, "has_more": has_more, "skip": offset, "limit": limit}
+            return {"products": rows, "has_more": has_more, "skip": offset, "limit": limit}
 
     @safe_db_call
     async def exist_profile_image(self, user_id: int, path: str) -> bool:
@@ -211,6 +210,15 @@ class DatabaseClient:
             if row:
                 return row
             return False
+
+    @safe_db_call
+    async def single_product_data(self, product_id: int) -> Tuple[str, ...] | bool:
+        async with self.session_factory.begin() as session:
+            result = await session.execute(text(self._get_single_product_data("Product")), {"product_id": product_id})
+            row = result.fetchone()
+            if row:
+                return row
+        return False
 
 
 data_client = DatabaseClient(settings.DATABASE_URL)

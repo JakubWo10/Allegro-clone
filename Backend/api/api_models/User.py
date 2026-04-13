@@ -6,11 +6,11 @@ from pydantic import BaseModel, EmailStr, Field
 class User(BaseModel):
 
     name: str = Field(min_length=3, max_length=50)
-    hashed_password: Optional[str] = Field(min_length=3, max_length=150)
+    hashed_password: str = Field(min_length=3, max_length=150)
     email: EmailStr = Field(min_length=5, max_length=50)
     google_id: Optional[str] = Field(None)
     image_source: Optional[str] = Field(None)
-    role: str = Field()
+    role: str = Field(min_length=3, max_length=20)
 
     def to_dict(self) -> Dict:
         return {"name": self.name, "email": self.email, "hashed_password": self.hashed_password, "image_source": self.image_source, "google_id": None, "role": self.role}

@@ -21,19 +21,17 @@ function HomePage(){
     const [query, setQuery] = useState("")
     const [selected, setSelected] = useState<string[]>([])
     const [number, setNumber] = useState<number>(0)
-    const navigate = useNavigate()
     const { auth, setAuth } = useContext(AuthContext);
     const [debounce, setDebounce] = useState("")
     const [user, setUser] = useState<User>()
     const BASE_URL = "http://127.0.0.1:8000";
-    const [currentPage, setCurrentPage] = useState(0)
     const [skip, setSkip] = useState(0)
     const [products, setProducts] = useState<Product[]>([])
     const [hasMore, setHasMore] = useState(true);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("")
 
-
+    console.log(debounce)
       useEffect(() => {
         const fetchProdcuts = async () => {
             try
@@ -54,8 +52,6 @@ function HomePage(){
                     return [...prev, ...data.products]
                 })
                 setHasMore(data.has_more)
-
-
             }
             catch (err)
             {
@@ -102,7 +98,7 @@ function HomePage(){
         image_url: `${BASE_URL}${data.image_source}`,
         })
 
-            localStorage.setItem("image_source", `${BASE_URL}${data.image_source}`)
+            localStorage.setItem("image_url", `${BASE_URL}${data.image_source}`)
         }
         fetchData();
     },[])
@@ -126,21 +122,20 @@ function HomePage(){
 
                 </div>
                   <div className='flex bg-white w-full lg:flex-1 h-screen rounded-lg shadow-xl border border-slate-200 flex-wrap overflow-y-auto justify-center'>
-                  <div className='flex  text-slate-400 text-xs font-medium uppercase justify-end items-end w-full'>
+                        <div className='flex  text-slate-400 text-xs font-medium uppercase justify-end items-start w-full'>
                             Znaleziono: <span className="text-orange-500 font-bold">{number}</span>
                         </div>
-                    <Products products={products} selected={selected} setNum={setNumber}  query={debounce} />
-
-
-                   {hasMore && (
-                    <div className='flex justify-center w-full py-6 mt-auto'>
-                    <button  className= "flex items-center justify-center" onClick={() => setSkip(prev => prev + 12)}>
-                        {loading ? "Ładowanie..." : "Pokaż więcej"}
-                    </button>
-                      </div>
-                    )}
+                        <div>
+                            <Products products={products} selected={selected} setNum={setNumber}  query={debounce} />
+                        </div>
+                    {hasMore && (
+                        <div className='flex justify-center w-full py-6 mt-auto items-end'>
+                        <button  className= "flex " onClick={() => setSkip(prev => prev + 12)}>
+                            {loading ? "Ładowanie..." : "Pokaż więcej"}
+                        </button>
+                        </div>
+                        )}
                     </div>
-
                 <div className='flex bg-white w-full lg:w-64 h-40 border border-slate-200'>
 
                 </div>

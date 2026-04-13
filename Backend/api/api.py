@@ -3,6 +3,7 @@ from typing import Dict, Tuple
 
 import jwt
 from api.api_models.Google import GoogleToken
+from api.api_models.Product import ProductOut
 from api.api_models.RegUser import Reguser
 from api.api_models.UserOut import UserOut
 from api.UserService import User_service
@@ -98,7 +99,7 @@ async def verify_token(token: str, security_scopes) -> Tuple[str, ...] | bool:
                 detail=MyHttpException.UNAUTHORIZED,
             )
 
-        for scope in security_scopes.scopes:
+        for scope in security_scopes.scopes:  # ["user"]
             if scope not in token_scopes:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
@@ -187,7 +188,7 @@ async def login_google(google_token: GoogleToken):
 
         existing_user_id = result[1]
         exsisting_image_source = result[2]
-        existing_user_scope = result[5]
+        existing_user_scope = result[4]
         token = create_token(user_name, str(existing_user_id), existing_user_scope)
         return {"access_token": token, "token_type": "bearer", "email": user_email, "username": user_name, "user_id": existing_user_id, "image_source": exsisting_image_source}
 
@@ -315,3 +316,16 @@ async def get_all_products(skip: int = 0):
     product_list = await User_service.get_all_prods(LIMIT, skip)
 
     return product_list
+
+
+@app.get("/product/{product_id}", response_model=ProductOut)
+async def get_single_product_data(product_id: int):
+    result = await User_service.get_single_product(product_id)
+    if result is False:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=MyHttpException.NOT_FOUND)
+    return result
+
+
+# @app.get("/{username}/profile")
+# async def get_userprofile(user=Security(get_current_user), scopes=["user"]):
+#     pass

@@ -1,8 +1,9 @@
 import os
 from io import BytesIO
 from random import randint
+from typing import Any, Dict, Tuple
 
-from api.api_models.Product import Product
+from api.api_models.Product import ProductCreate, ProductOut
 from api.api_models.RegUser import Reguser
 from api.api_models.User import GoogleUser, User
 from config.config import AVATARS_DIR, PRODUCTS_DIR
@@ -28,8 +29,8 @@ class Transform:
         description: str,
         category: str,
         owner_id: int,
-    ) -> Product:
-        return Product(
+    ) -> ProductCreate:
+        return ProductCreate(
             name=name,
             price=price,
             description=description,
@@ -86,6 +87,21 @@ class Transform:
                 binary_data = await response.aread()
             return binary_data
         return None
+
+    def transforming_to_product_out(self, limit: int, data: Dict[str, Any]) -> Dict[str, object]:
+        product_list = []
+
+        rows = data["products"]
+        for row in rows[:limit]:
+            print(row)
+            product = ProductOut.from_tuples(row)
+            product_list.append(product)
+
+        return {"products": product_list, "has_more": data["has_more"], "limit": limit, "skip": data["skip"]}
+
+    def single_product_transform(self, row: Tuple[str]) -> Dict[str, str]:
+        single_product = ProductOut.user_product(row)
+        return single_product
 
 
 transformer = Transform()

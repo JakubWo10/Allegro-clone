@@ -1,6 +1,6 @@
-from typing import Tuple
+from typing import Any, Dict, Tuple
 
-from api.api_models.Product import Product
+from api.api_models.Product import ProductCreate
 from api.api_models.RegUser import Reguser
 from api.api_models.User import GoogleUser, User
 from database.DataClient import DatabaseClient, data_client
@@ -48,7 +48,7 @@ class UserService:
         quantity: int,
         category: str,
         owner_id: int,
-    ) -> Product:
+    ) -> ProductCreate:
         return self.transform.create_product(
             name=name,
             price=price,
@@ -58,7 +58,7 @@ class UserService:
             owner_id=owner_id,
         )
 
-    async def send_product_to_data(self, product: Product) -> bool:
+    async def send_product_to_data(self, product: ProductCreate) -> bool:
         return await self.data_client.insert_product(product)
 
     def processs_main_product_image(self, product_id: int, file: bytes) -> str:
@@ -70,8 +70,18 @@ class UserService:
     async def get_product_id(self, user_id: int, name: str) -> Tuple[int, ...] | bool:
         return await self.data_client.get_user_product(user_id, name)
 
-    async def get_all_prods(self, limit: int, offset: int) -> Tuple[str, ...] | bool:
-        return await self.data_client.get_all_products(limit, offset)
+    async def get_all_prods(self, limit: int, offset: int) -> Dict[str, Any] | bool:
+        result = await self.data_client.get_all_products(limit, offset)
+
+        proper_result = self.transform.transforming_to_product_out(limit, result)
+        return proper_result
+
+    async def get_single_product(self, product_id: int) -> Dict[str, Any] | bool:
+        result = await self.data_client.single_product_data(product_id)
+        if result is False:
+            return False
+        single_product = self.transform.single_product_transform(result)
+        return single_product
 
 
 User_service = UserService(DATA_CLIENT=data_client, TRANSFORM=transformer)

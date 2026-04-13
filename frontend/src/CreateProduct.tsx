@@ -83,27 +83,33 @@ function CreateProduct () {
         const data = await response.json()
 
         setMessage(data.Message)
-
-
-
         }
        catch (err) {
         console.log(err)
         return
 
        }
+      if (fileInputRef.current)
+      {
+        fileInputRef.current.value = ""
+        setCategory("")
+        setDescription("")
+        setPrice("")
+        setQuantity("")
+        setName("")
+        setPreview("")
+      }
+
     }
 
      useEffect(() => {
-            const image_source = auth.image_url
-
-            if (!image_source)
+        const picture = localStorage.getItem("image_url")
+            if (!picture)
             {
                 return
             }
-
-            setProfilePicture(image_source)
-       })
+            setProfilePicture(picture)
+       }, [])
 
     return (
 

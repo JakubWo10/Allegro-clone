@@ -36,7 +36,7 @@ function Products ({products, selected, setNum, query}: ProductList) {
     const filteredProducts = useMemo(() => {
         const result = selected.length > 0 ? products.filter(item => selected.includes(item.category)) : products
 
-        return query.length > 0 ? result.filter(item => item.name.includes(query.toLocaleLowerCase())) : result
+        return query.length > 0 ? result.filter(item => item.name.toLocaleLowerCase().includes(query.toLocaleLowerCase())) : result
 
     }, [query, products, selected])
 
