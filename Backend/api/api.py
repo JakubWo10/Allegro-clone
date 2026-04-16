@@ -1,13 +1,13 @@
 from datetime import datetime, timedelta, timezone
-from typing import Dict, Tuple
+from typing import Callable, Dict
 
 import jwt
 from api.api_models.Google import GoogleToken
 from api.api_models.Product import ProductOut
-from api.api_models.RegUser import Reguser
-from api.api_models.UserOut import UserOut
-from api.UserService import User_service
+from api.api_models.User import Reguser, UserOut
+from api.UserService import UserService
 from config.config import AVATARS_DIR, PRODUCTS_DIR, settings
+from database.DataClient import create_database_client
 from fastapi import (
     Depends,
     FastAPI,
@@ -30,8 +30,14 @@ from google.oauth2 import id_token
 from jose import ExpiredSignatureError
 from jwt import PyJWTError
 from passlib.context import CryptContext
+from transform.Transform import Transform
 
 from .exceptions import MyHttpException
+
+transformer = Transform()
+data_client = create_database_client(settings.DATABASE_URL)
+User_service = UserService(DATA_CLIENT=data_client, TRANSFORM=transformer)
+
 
 app = FastAPI()
 
@@ -47,7 +53,6 @@ app.add_middleware(
     allow_credentials=True,
 )
 
-
 password_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl="/login",
@@ -59,8 +64,12 @@ def hash_password(password: str) -> str:
     return password_context.hash(password)
 
 
-def verify_passowrd(password: str, hashed_password: str) -> bool:
+def verify_password(password: str, hashed_password: str) -> bool:
     return password_context.verify(password, hashed_password)
+
+
+def get_user_service() -> UserService:
+    return User_service
 
 
 def create_token(username: str, user_id: str, user_scope: str) -> str:
@@ -73,7 +82,7 @@ def create_token(username: str, user_id: str, user_scope: str) -> str:
     return jwt.encode(payload, settings.SECRET_KEY.get_secret_value(), algorithm=settings.ALGORITHM)
 
 
-async def verify_token(token: str, security_scopes) -> Tuple[str, ...] | bool:
+async def verify_token(token: str, security_scopes) -> Dict[str, str] | bool:
     if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -113,7 +122,7 @@ async def verify_token(token: str, security_scopes) -> Tuple[str, ...] | bool:
     return exist
 
 
-async def get_current_user(security_scopes: SecurityScopes, token: str = Depends(oauth2_scheme)) -> Tuple[str, ...] | bool:
+async def get_current_user(security_scopes: SecurityScopes, token: str = Depends(oauth2_scheme)) -> Dict[str, str] | bool:
     user = await verify_token(token, security_scopes)
 
     if not user:
@@ -123,26 +132,26 @@ async def get_current_user(security_scopes: SecurityScopes, token: str = Depends
 
 
 @app.post("/register")
-async def register(reg_user: Reguser) -> Dict[str, str]:
+async def register(reg_user: Reguser, service: UserService = Depends(get_user_service)) -> Dict[str, str]:
     user_name = reg_user.name
 
-    exist = await User_service.user_name_exist(user_name)
+    exist = await service.user_name_exist(user_name)
 
     if exist:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=MyHttpException.NAME_IS_TAKEN)
 
     user_password_hashed = hash_password(reg_user.password)
-    user = User_service.create_user(user_password_hashed, "user", reg_user)
-    response = await User_service.insert_user(user)
+    user = service.create_user(user_password_hashed, "user", reg_user)
+    response = await service.insert_user(user)
 
     if response:
-        return {"detail": "Poprawnie zarejestrowano użytkownika"}
+        return {"detail": "Sucessful register"}
 
-    return {"detail": "Cos poszło nie tak"}
+    return {"detail": "Something went wrong"}
 
 
-@app.post("/Google/login")
-async def login_google(google_token: GoogleToken):
+@app.post("/Google/login")  # TOO LONG ENDPOINT HAVE TO REFRACTOR THIS CODE
+async def login_google(google_token: GoogleToken, service: UserService = Depends(get_user_service)):
 
     try:
         id_info = id_token.verify_oauth2_token(google_token.google_token, requests.Request(), settings.VITE_GOOGLE_CLIENT_ID.get_secret_value())
@@ -151,17 +160,17 @@ async def login_google(google_token: GoogleToken):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Nieprawidłowy token Google")
 
     user_email = id_info.get("email")
-    user_name = id_info.get("name")
+    username = id_info.get("name")
     user_google_id = id_info.get("sub")
 
-    result = await User_service.user_name_exist(user_name)
+    result = await service.user_name_exist(username)
 
     if not result:
 
-        Google_user = User_service.transform_to_google_user(user_name, user_email, user_google_id, "user")
+        Google_user = service.transform_to_google_user(username, user_email, user_google_id, "user")
 
-        await User_service.insert_user(Google_user)
-        user = await User_service.user_name_exist(user_name)
+        await service.insert_user(Google_user)
+        user = await service.user_name_exist(username)
 
         user_google_picture_link = id_info.get("picture")
 
@@ -170,17 +179,17 @@ async def login_google(google_token: GoogleToken):
 
         user_id = int(user[1])
         user_scope = user[4]
-        picture_bytes = await User_service.get_google_picture_bytes(user_google_picture_link)
+        picture_bytes = await service.get_google_picture_bytes(user_google_picture_link)
 
         if picture_bytes is None:
             return {"Message": "Something went wrong"}
 
-        filepath = User_service.processs_profile_image(user_id, picture_bytes)
-        await User_service.update_profile_image(filepath, user_id)
+        filepath = service.processs_profile_image(user_id, picture_bytes)
+        await service.update_profile_image(filepath, user_id)
 
-        token = create_token(user_name, str(user_id), user_scope)
+        token = create_token(username, str(user_id), user_scope)
 
-        return {"access_token": token, "token_type": "bearer", "email": user_email, "username": user_name, "user_id": user_id, "image_source": filepath}
+        return {"access_token": token, "token_type": "bearer", "email": user_email, "username": username, "user_id": user_id, "image_source": filepath}
 
     else:
         if isinstance(result, bool) or result is None:
@@ -189,15 +198,15 @@ async def login_google(google_token: GoogleToken):
         existing_user_id = result[1]
         exsisting_image_source = result[2]
         existing_user_scope = result[4]
-        token = create_token(user_name, str(existing_user_id), existing_user_scope)
-        return {"access_token": token, "token_type": "bearer", "email": user_email, "username": user_name, "user_id": existing_user_id, "image_source": exsisting_image_source}
+        token = create_token(username, str(existing_user_id), existing_user_scope)
+        return {"access_token": token, "token_type": "bearer", "email": user_email, "username": username, "user_id": existing_user_id, "image_source": exsisting_image_source}
 
 
 @app.post("/login")
-async def login(form_data: OAuth2PasswordRequestForm = Depends()) -> Dict[str, str]:
+async def login(form_data: OAuth2PasswordRequestForm = Depends(), service: UserService = Depends(get_user_service), verify: Callable = Depends(lambda: verify_password)) -> Dict[str, str]:
     user_name: str = form_data.username
 
-    exist = await User_service.user_exist_all_data(user_name)
+    exist = await service.user_exist_all_data(user_name)
 
     if not exist:
         raise HTTPException(
@@ -211,17 +220,17 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()) -> Dict[str, s
             detail=MyHttpException.UNAUTHORIZED,
         )
 
-    user_password = exist[1]
-
-    if not verify_passowrd(form_data.password, user_password):
+    user_password = exist["hashed_password"]
+    if not verify(form_data.password, user_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=MyHttpException.INVALID_PASSWORD,
         )
-    user_scope = exist[5]
-    user_id = str(exist[4])
-    user_email = exist[3]
-    image_source = exist[2]
+
+    user_scope = exist["role"]
+    user_id = str(exist["user_id"])
+    user_email = exist["email"]
+    image_source = exist["image_source"]
     token = create_token(user_name, user_id, user_scope)
 
     return {"access_token": token, "token_type": "bearer", "user_email": user_email, "username": user_name, "user_id": user_id, "image_source": image_source}
@@ -234,7 +243,7 @@ async def get_my_data(user: str = Depends(get_current_user)):
 
 
 @app.patch("/{user_id}/profile/image")
-async def update_image(user_id: int, file: UploadFile = File(...), user: str = Security(get_current_user, scopes=["user"])):
+async def update_image(user_id: int, file: UploadFile = File(...), user: str = Security(get_current_user, scopes=["user"]), service: UserService = Depends(get_user_service)) -> Dict[str, str]:
 
     if isinstance(user, bool) or user is None:
         raise HTTPException(
@@ -250,27 +259,19 @@ async def update_image(user_id: int, file: UploadFile = File(...), user: str = S
     content = await file.read()
 
     try:
-        path = User_service.processs_profile_image(user_id, content)
+        path = service.processs_profile_image(user_id, content)
     except Exception:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=MyHttpException.BAD_REQUEST)
 
-    result = await User_service.update_profile_image(path, user_id)
+    result = await service.update_profile_image(path, user_id)
     if not result:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=MyHttpException.BAD_REQUEST)
 
     return {"Message": "Succesfully updated image", "path": path}
 
 
-@app.post("/product/create")
-async def create_product(
-    name: str = Form(...),
-    quantity: int = Form(...),
-    description: str = Form(...),
-    price: float = Form(...),
-    category: str = Form(...),
-    user: str = Security(get_current_user, scopes=["user"]),
-    file: UploadFile = File(...),
-):
+@app.post("/product/create")  # TOO LONG ENDPOINT NEED TO REFRACTOR THIS CODE
+async def create_product(name: str = Form(...), quantity: int = Form(...), description: str = Form(...), price: float = Form(...), category: str = Form(...), user: str = Security(get_current_user, scopes=["user"]), file: UploadFile = File(...), service: UserService = Depends(get_user_service)):
 
     try:
         if price < 0 or quantity < 0:
@@ -289,13 +290,12 @@ async def create_product(
         )
 
     owner_id = user[4]
-    product = User_service.product_create(name, price, description, quantity, category, int(owner_id))
-    await User_service.send_product_to_data(product)
+    product = service.product_create(name, price, description, quantity, category, int(owner_id))
+    await service.send_product_to_data(product)
 
-    product_id_tuple = await User_service.get_product_id(int(owner_id), name)
+    product_id_tuple = await service.get_product_id(int(owner_id), name)
 
     if isinstance(product_id_tuple, bool):
-        print(product_id_tuple)
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=MyHttpException.OTHER_ERROR,
@@ -303,24 +303,24 @@ async def create_product(
 
     product_id = product_id_tuple[0]
 
-    filepath = User_service.processs_main_product_image(product_id, content)
+    filepath = service.processs_main_product_image(product_id, content)
 
-    await User_service.update_product_image(product_id, filepath)
+    await service.update_product_image(product_id, filepath)
 
     return {"Message": "Succesfully added product"}
 
 
 @app.get("/products")
-async def get_all_products(skip: int = 0):
+async def get_all_products(skip: int = 0, service: UserService = Depends(get_user_service)):
     LIMIT = 12
-    product_list = await User_service.get_all_prods(LIMIT, skip)
+    product_list = await service.get_all_prods(LIMIT, skip)
 
     return product_list
 
 
 @app.get("/product/{product_id}", response_model=ProductOut)
-async def get_single_product_data(product_id: int):
-    result = await User_service.get_single_product(product_id)
+async def get_single_product_data(product_id: int, service: UserService = Depends(get_user_service)):
+    result = await service.get_single_product(product_id)
     if result is False:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=MyHttpException.NOT_FOUND)
     return result

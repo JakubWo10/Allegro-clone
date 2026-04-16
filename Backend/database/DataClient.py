@@ -1,11 +1,15 @@
 from functools import wraps
 from typing import Callable, Dict, List, Tuple
 
-from config.config import settings
 from database.Contracts import DataProtocol
 from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 
 
 def safe_db_call(func: Callable):
@@ -37,9 +41,8 @@ class DatabaseClient:
         "Comments": {"columns": ("autor_id", "product_id", "description", "created_at")},
     }
 
-    def __init__(self, BASE_URL) -> None:
-        self.base_url = BASE_URL
-        self.engine = create_async_engine(self.base_url, pool_size=10, max_overflow=20)
+    def __init__(self, engine: AsyncEngine) -> None:
+        self.engine = engine
         self.session_factory = async_sessionmaker(bind=self.engine, class_=AsyncSession)
 
     def _columns_extractor(self, columns: Tuple[str]) -> str:
@@ -221,4 +224,6 @@ class DatabaseClient:
         return False
 
 
-data_client = DatabaseClient(settings.DATABASE_URL)
+def create_database_client(base_url: str) -> DatabaseClient:
+    engine = create_async_engine(base_url, pool_size=10, max_overflow=20)
+    return DatabaseClient(engine)

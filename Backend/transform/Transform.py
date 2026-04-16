@@ -4,8 +4,7 @@ from random import randint
 from typing import Any, Dict, Tuple
 
 from api.api_models.Product import ProductCreate, ProductOut
-from api.api_models.RegUser import Reguser
-from api.api_models.User import GoogleUser, User
+from api.api_models.User import GoogleUser, Reguser, User
 from config.config import AVATARS_DIR, PRODUCTS_DIR
 from httpx import AsyncClient
 from PIL import Image, ImageOps, UnidentifiedImageError
@@ -17,6 +16,9 @@ class Transform:
 
     def transform_to_user(self, hashed_password: str, role: str, reg_user: Reguser) -> User:
         return User(name=reg_user.name, hashed_password=hashed_password, email=reg_user.email, image_source=self.image_url, role=role)
+
+    def user_dict(self, row: Tuple[str, ...]) -> Dict[str, str]:
+        return User.from_tuple(row)
 
     def transform_to_google_user(self, name: str, email: str, google_id: str, role: str) -> GoogleUser:
         return GoogleUser(name=name, email=email, google_id=google_id, image_source=self.image_url, role=role)
@@ -93,7 +95,6 @@ class Transform:
 
         rows = data["products"]
         for row in rows[:limit]:
-            print(row)
             product = ProductOut.from_tuples(row)
             product_list.append(product)
 
@@ -102,6 +103,3 @@ class Transform:
     def single_product_transform(self, row: Tuple[str]) -> Dict[str, str]:
         single_product = ProductOut.user_product(row)
         return single_product
-
-
-transformer = Transform()

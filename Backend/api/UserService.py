@@ -1,10 +1,9 @@
 from typing import Any, Dict, Tuple
 
 from api.api_models.Product import ProductCreate
-from api.api_models.RegUser import Reguser
-from api.api_models.User import GoogleUser, User
-from database.DataClient import DatabaseClient, data_client
-from transform.Transform import Transform, transformer
+from api.api_models.User import GoogleUser, Reguser, User
+from database.DataClient import DatabaseClient
+from transform.Transform import Transform
 
 
 class UserService:
@@ -13,8 +12,14 @@ class UserService:
         self.data_client = DATA_CLIENT
         self.transform = TRANSFORM
 
-    async def user_exist_all_data(self, username: str) -> Tuple[str, ...] | bool:
-        return await self.data_client.user_exist_with_password(username)
+    async def user_exist_all_data(self, username: str) -> Dict[str, str] | bool:
+        result = await self.data_client.user_exist_with_password(username)
+        if not result:
+            return False
+
+        user_dict_data = self.transform.user_dict(result)
+
+        return user_dict_data
 
     def create_user(self, hashed_password: str, role: str, reg_user: Reguser) -> User:
         return self.transform.transform_to_user(hashed_password, role, reg_user)
@@ -82,6 +87,3 @@ class UserService:
             return False
         single_product = self.transform.single_product_transform(result)
         return single_product
-
-
-User_service = UserService(DATA_CLIENT=data_client, TRANSFORM=transformer)
